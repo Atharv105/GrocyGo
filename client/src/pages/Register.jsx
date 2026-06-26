@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
+import axios from "axios";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -10,16 +11,34 @@ function Register() {
     password: "",
   });
 
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
     try {
+      console.log(formData);
       const res = await axios.post(
         "http://localhost:5000/api/auth/register",
         formData,
       );
-      alert("Registration Successful");
+
+      alert(res.data.message);
+      console.log(res.data);
     } catch (err) {
-      console.log(err);
+      console.error(err.response?.data || err);
       alert("Registration Failed");
     }
   };
@@ -50,30 +69,44 @@ function Register() {
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             <input
               type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
               placeholder="Full Name"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
 
             <input
               type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               placeholder="Email Address"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
 
             <input
               type="tel"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
               placeholder="Mobile Number"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
 
             <input
               type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="Password"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
 
             <input
               type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm Password"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
