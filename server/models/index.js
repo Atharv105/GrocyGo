@@ -4,6 +4,7 @@ const db = {};
 
 db.sequelize = sequelize;
 
-// Models will be added here
+// Import Models
+db.User = require("./User");
 
 module.exports = db;
