@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -11,7 +13,6 @@ function Register() {
     password: "",
     confirmPassword: "",
   });
-
 
   const handleChange = (e) => {
     setFormData({
@@ -29,14 +30,20 @@ function Register() {
     }
 
     try {
-      console.log(formData);
       const res = await axios.post(
         "http://localhost:5000/api/auth/register",
         formData,
       );
 
       alert(res.data.message);
-      console.log(res.data);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirmPassword: "",
+      });
+      navigate("/login");
     } catch (err) {
       console.error(err.response?.data || err);
       alert("Registration Failed");
