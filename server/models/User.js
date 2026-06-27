@@ -15,17 +15,14 @@ const User = sequelize.define(
       allowNull: false,
     },
 
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-
-    phone: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
+    mobile: {
+    type: DataTypes.STRING(10),
+    allowNull: false,
+    unique: true,
+    validate: {
+        len: [10, 10]
+    }
+},
 
     password: {
       type: DataTypes.STRING,
@@ -38,8 +35,8 @@ const User = sequelize.define(
     },
   },
   {
-    timestamps: true,
     tableName: "users",
+    timestamps: true,
   }
 );
 
