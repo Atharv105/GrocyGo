@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { ShoppingBasket } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -25,16 +26,18 @@ function Login() {
         formData,
       );
 
-      console.log(res.data);
-
       localStorage.setItem("token", res.data.token);
 
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       alert("Login Successful");
+      setFormData({
+        email: "",
+        password: "",
+      });
     } catch (err) {
       console.log(err);
-      alert("Invalid Credentials");
+      alert(err.response?.data?.message || "Login Failed");
     }
   };
 

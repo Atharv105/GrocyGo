@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -11,8 +13,6 @@ function Register() {
     password: "",
     confirmPassword: "",
   });
-
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -24,20 +24,26 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
 
     try {
-      console.log(formData);
       const res = await axios.post(
         "http://localhost:5000/api/auth/register",
         formData,
       );
 
       alert(res.data.message);
-      console.log(res.data);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirmPassword: "",
+      });
+      navigate("/login");
     } catch (err) {
       console.error(err.response?.data || err);
       alert("Registration Failed");
@@ -106,8 +112,8 @@ function Register() {
 
             <input
               type="password"
-              name="confirmPass"
-              value={formData.confirmPass}
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Confirm Password"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
