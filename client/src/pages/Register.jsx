@@ -7,8 +7,9 @@ function Register() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    mobile: "",
+    phone: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -87,8 +88,8 @@ function Register() {
 
             <input
               type="tel"
-              name="mobile"
-              value={formData.mobile}
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
               placeholder="Mobile Number"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
@@ -105,8 +106,9 @@ function Register() {
 
             <input
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              name="confirmPass"
+              value={formData.confirmPass}
+              onChange={handleChange}
               placeholder="Confirm Password"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
             />
