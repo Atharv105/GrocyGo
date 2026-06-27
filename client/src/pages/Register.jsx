@@ -12,7 +12,6 @@ function Register() {
     confirmPassword: "",
   });
 
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -24,7 +23,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
@@ -106,8 +105,8 @@ function Register() {
 
             <input
               type="password"
-              name="confirmPass"
-              value={formData.confirmPass}
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Confirm Password"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"

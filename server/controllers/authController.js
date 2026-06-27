@@ -9,25 +9,25 @@ const User = db.User;
 // =========================
 const register = async (req, res) => {
     try {
-        const { name, email, phone, password } = req.body;
+        const { name, mobile, password } = req.body;
 
         // Check if all fields are provided
-        if (!name || !email || !phone || !password) {
+        if (!name || !mobile || !password) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required",
             });
         }
 
-        // Check if email already exists
+        // Check if mobile number already exists
         const existingUser = await User.findOne({
-            where: { email },
+            where: { mobile },
         });
 
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: "Email already registered",
+                message: "mobile number already registered",
             });
         }
 
@@ -37,8 +37,7 @@ const register = async (req, res) => {
         // Create user
         const user = await User.create({
             name,
-            email,
-            phone,
+            mobile,
             password: hashedPassword,
         });
 
@@ -52,7 +51,7 @@ const register = async (req, res) => {
             user: {
                 id: user.id,
                 name: user.name,
-                email: user.email,
+                mobile: user.mobile,
                 role: user.role,
             },
         });
@@ -73,18 +72,18 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { mobile, password } = req.body;
 
         // Check if all fields are provided
-        if (!email || !password) {
+        if (!mobile || !password) {
             res.status(400).json({
                 success: false,
-                message: "Email and Password are required"
+                message: "mobile number and Password are required"
             });
         }
 
         const user = await User.findOne({
-            where: { email },
+            where: { mobile },
         });
 
         if(!user){
@@ -114,7 +113,7 @@ const login = async (req, res) => {
             user:{
                 id : user.id,
                 name : user.name,
-                email : user.email,
+                mobile : user.mobile,
                 role : user.role,
             }
         })
@@ -128,7 +127,35 @@ const login = async (req, res) => {
     }
 }
 
+// =========================
+// Get Logged In User
+// =========================
+const profile = async (req, res) => {
+  try {
+
+    const user = await User.findByPk(req.user.id, {
+      attributes: {
+        exclude: ["password"],
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+
+  }
+};
+
 module.exports = {
     register,
-    login
+    login,
+    profile
 };
