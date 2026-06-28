@@ -8,8 +8,7 @@ function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    phone: "",
+    mobile: "",
     password: "",
     confirmPassword: "",
   });
@@ -38,8 +37,7 @@ function Register() {
       alert(res.data.message);
       setFormData({
         name: "",
-        email: "",
-        phone: "",
+        mobile: "",
         password: "",
         confirmPassword: "",
       });
@@ -84,18 +82,9 @@ function Register() {
             />
 
             <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email Address"
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
-            />
-
-            <input
               type="tel"
-              name="phone"
-              value={formData.phone}
+              name="mobile"
+              value={formData.mobile}
               onChange={handleChange}
               placeholder="Mobile Number"
               className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"

@@ -5,8 +5,9 @@ import { ShoppingBasket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: "",
+    mobile: "",
     password: "",
   });
 
@@ -32,9 +33,10 @@ function Login() {
 
       alert("Login Successful");
       setFormData({
-        email: "",
+        mobile: "",
         password: "",
       });
+      navigate("/");
     } catch (err) {
       console.log(err);
       alert(err.response?.data?.message || "Login Failed");
@@ -70,14 +72,14 @@ function Login() {
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label className="text-gray-600 font-medium">Email</label>
+              <label className="text-gray-600 font-medium">Mobile Number</label>
 
               <input
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
+                type="text"
+                placeholder="Enter your phone number"
+                value={formData.mobile}
                 onChange={handleChange}
-                name="email"
+                name="mobile"
                 className="w-full mt-2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
