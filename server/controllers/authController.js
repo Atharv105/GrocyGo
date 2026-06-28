@@ -154,8 +154,73 @@ const profile = async (req, res) => {
   }
 };
 
+// =========================
+// Update User Profile
+// =========================
+const updateProfile = async (req, res) => {
+  try {
+    const { name, mobile } = req.body;
+
+    if (!name || !mobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and Mobile number are required",
+      });
+    }
+
+    if (mobile.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number must be exactly 10 digits",
+      });
+    }
+
+    // Check if mobile number is already taken by another user
+    const existingUser = await User.findOne({
+      where: { mobile },
+    });
+    if (existingUser && existingUser.id !== req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number already in use by another user",
+      });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.name = name;
+    user.mobile = mobile;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        mobile: user.mobile,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
     register,
     login,
-    profile
+    profile,
+    updateProfile
 };
+
