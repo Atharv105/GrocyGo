@@ -19,6 +19,13 @@ const register = async (req, res) => {
             });
         }
 
+        // Validate mobile number length
+        if (mobile.length !== 10) {
+            return res.status(400).json({
+                success: false,
+                message: "Mobile number must be exactly 10 digits",
+            });
+        }
         // Check if mobile number already exists
         const existingUser = await User.findOne({
             where: { mobile },

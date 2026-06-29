@@ -1,56 +1,75 @@
-const { Category } = require('../models');
+const { Category, Product } = require("../models");
+const AppError = require("../utils/AppError");
 
+// Create Category
 const createCategory = async (categoryData) => {
-    // Check if category already exists
-    const existingCategory = await Category.findOne({
-        where: {
-            name: categoryData.name,
-        },
-    });
+  const existingCategory = await Category.findOne({
+    where: {
+      name: categoryData.name,
+      isActive: true,
+    },
+  });
 
-    if (existingCategory) {
-        throw new Error('Category already exists');
-    }
+  if (existingCategory) {
+    throw new AppError("Category already exists", 400);
+  }
 
-    //create new category
-    const category = await Category.create(categoryData);
-    return category;
+  const category = await Category.create(categoryData);
+
+  return category;
 };
 
+// Get All Categories
 const getAllCategories = async () => {
-    const categories = await Category.findAll({
-        order: [["createdAt", "DESC"]],
-    });
-    return categories;
+  const categories = await Category.findAll({
+    where: {
+      isActive: true,
+    },
+    order: [["createdAt", "DESC"]],
+  });
+
+  return categories;
 };
 
+// Get Category By ID
 const getCategoryById = async (id) => {
-  const category = await Category.findByPk(id);
+  const category = await Category.findOne({
+    where: {
+      id,
+      isActive: true,
+    },
+  });
 
   if (!category) {
-    throw new Error("Category not found");
+    throw new AppError("Category not found", 404);
   }
 
   return category;
 };
 
+// Update Category
 const updateCategory = async (id, categoryData) => {
-  const category = await Category.findByPk(id);
+  const category = await Category.findOne({
+    where: {
+      id,
+      isActive: true,
+    },
+  });
 
   if (!category) {
-    throw new Error("Category not found");
+    throw new AppError("Category not found", 404);
   }
 
-  // Check if another category already has the same name
   if (categoryData.name) {
     const existingCategory = await Category.findOne({
       where: {
         name: categoryData.name,
+        isActive: true,
       },
     });
 
     if (existingCategory && existingCategory.id !== category.id) {
-      throw new Error("Category name already exists");
+      throw new AppError("Category name already exists", 400);
     }
   }
 
@@ -59,23 +78,42 @@ const updateCategory = async (id, categoryData) => {
   return category;
 };
 
+// Soft Delete Category
 const deleteCategory = async (id) => {
-  const category = await Category.findByPk(id);
+  const category = await Category.findOne({
+    where: {
+      id,
+      isActive: true,
+    },
+  });
 
   if (!category) {
-    throw new Error("Category not found");
+    throw new AppError("Category not found", 404);
   }
 
-  await category.destroy();
+  const products = await Product.count({
+    where: {
+      categoryId: id,
+      isActive: true,
+    },
+  });
 
-  return;
+  if (products > 0) {
+    throw new AppError(
+      "Cannot delete category because it contains active products.",
+      400
+    );
+  }
+
+  await category.update({
+    isActive: false,
+  });
 };
 
 module.exports = {
-    createCategory,
-    getAllCategories,
-    getCategoryById,
-    updateCategory,
-    deleteCategory
+  createCategory,
+  getAllCategories,
+  getCategoryById,
+  updateCategory,
+  deleteCategory,
 };
-
