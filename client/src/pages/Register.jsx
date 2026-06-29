@@ -44,7 +44,7 @@ function Register() {
       navigate("/login");
     } catch (err) {
       console.error(err.response?.data || err);
-      alert("Registration Failed");
+      alert(err.response?.data?.message || "An error occurred during registration");
     }
   };
 
