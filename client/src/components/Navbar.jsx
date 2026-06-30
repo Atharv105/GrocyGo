@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Search, ShoppingCart, User, Menu } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 import {
   FaUserCircle,
@@ -12,7 +13,7 @@ import {
 
 function Navbar() {
   const navigate = useNavigate();
-  const isLoggedIn = true; // Later from Context/JWT
+  const { isLoggedIn, user, logout } = useContext(AuthContext);
 
   const [openProfile, setOpenProfile] = useState(false);
   const profileRef = useRef(null);
@@ -20,8 +21,7 @@ function Navbar() {
   const [mobileMenu, setMobileMenu] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
     navigate("/login");
   };
 
@@ -205,7 +205,7 @@ function Navbar() {
                       </Link>
 
                       <Link
-                        to="/dashboard"
+                        to={user?.role === "ADMIN" ? "/admin" : "/dashboard"}
                         className="
           flex
           items-center
@@ -304,7 +304,7 @@ function Navbar() {
               </div>
             ) : (
               <div className="space-y-3">
-                <Link to="/dashboard" className="block">
+                <Link to={user?.role === "ADMIN" ? "/admin" : "/dashboard"} className="block">
                   Dashboard
                 </Link>
 
@@ -312,7 +312,7 @@ function Navbar() {
                   Profile
                 </Link>
 
-                <button className="text-red-500">Logout</button>
+                <button onClick={handleLogout} className="text-red-500">Logout</button>
               </div>
             )}
           </div>
