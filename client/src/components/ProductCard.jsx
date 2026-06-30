@@ -30,19 +30,21 @@ function ProductCard({ product }) {
           <Heart size={20} className="text-red-500" />
         </button>
 
-        <span
-          className="
-          bg-orange-100
-          text-orange-600
-          text-xs
-          px-3
-          py-1
-          rounded-full
-          font-medium
-          "
-        >
-          {product.discount}
-        </span>
+        {product.discount && (
+          <span
+            className="
+            bg-orange-100
+            text-orange-600
+            text-xs
+            px-3
+            py-1
+            rounded-full
+            font-medium
+            "
+          >
+            {product.discount}
+          </span>
+        )}
       </div>
 
       {/* Product */}
@@ -60,7 +62,7 @@ function ProductCard({ product }) {
           {product.name}
         </h3>
 
-        <p className="text-gray-500 mt-2">{product.quantity}</p>
+        <p className="text-gray-500 mt-2">{product.unit || product.quantity}</p>
 
         <h4
           className="

@@ -5,37 +5,33 @@ import {
   FaCalendarAlt,
   FaEdit,
 } from "react-icons/fa";
-import axios from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../../services/api";
 
 function MyProfile() {
-  
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        window.location.href = "/login";
+        navigate("/login");
         return;
       }
 
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const res = await API.get("/auth/profile");
         setUser(res.data.user);
       } catch (err) {
         console.error("Failed to fetch profile", err);
-        window.location.href = "/login";
+        navigate("/login");
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [navigate]);
   if (!user) {
     return <h2 className="text-center mt-20">Loading...</h2>;
   }

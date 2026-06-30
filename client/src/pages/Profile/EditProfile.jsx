@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { FaUserCircle, FaCamera } from "react-icons/fa";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import API from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 
 function EditProfile() {
   const navigate = useNavigate();
+  const { updateProfileState } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -14,14 +16,7 @@ function EditProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get("http://localhost:5000/api/auth/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const res = await API.get("/auth/profile");
         setFormData({
           name: res.data.user.name,
           mobile: res.data.user.mobile,
@@ -45,20 +40,13 @@ function EditProfile() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-
-      await axios.put("http://localhost:5000/api/auth/profile", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const res = await API.put("/auth/profile", formData);
+      updateProfileState(res.data.user);
       alert("Profile Updated Successfully");
-
       navigate("/profile");
     } catch (err) {
       console.log(err);
-      alert("Failed to update profile");
+      alert(err.response?.data?.message || "Failed to update profile");
     }
   };
 

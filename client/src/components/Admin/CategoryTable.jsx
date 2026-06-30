@@ -1,0 +1,134 @@
+import { useState } from "react";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import EditCategoryModal from "./EditCategoryModal";
+import DeleteModal from "./DeleteModal";
+import API from "../../services/api";
+
+function CategoryTable({ categories, loading, onRefresh }) {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  const handleEditClick = (category) => {
+    setSelectedCategory(category);
+    setIsEditOpen(true);
+  };
+
+  const handleDeleteClick = (category) => {
+    setSelectedCategory(category);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const res = await API.delete(`/categories/${selectedCategory.id}`);
+      alert(res.data.message || "Category deleted successfully");
+      setIsDeleteOpen(false);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to delete category");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-8 text-center text-gray-500">
+        Loading categories table...
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-md p-8 text-center text-gray-500">
+        No categories found. Create a category to get started.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-green-600 text-white">
+          <tr>
+            <th className="p-4">Image/Emoji</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {categories.map((category) => (
+            <tr
+              key={category.id}
+              className="border-b hover:bg-gray-50 text-center"
+            >
+              <td className="p-5 text-3xl">{category.image || "📦"}</td>
+              <td className="font-semibold text-gray-800">{category.name}</td>
+              <td className="text-gray-500 max-w-xs truncate">{category.description || "No description"}</td>
+              <td>
+                <span
+                  className={`px-4 py-1 rounded-full text-xs font-semibold ${
+                    category.isActive
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {category.isActive ? "Active" : "Inactive"}
+                </span>
+              </td>
+
+              <td>
+                <button
+                  onClick={() => handleEditClick(category)}
+                  className="
+                  text-blue-600
+                  mr-4
+                  hover:text-blue-800
+                  text-lg
+                  "
+                >
+                  <FaEdit />
+                </button>
+
+                <button
+                  onClick={() => handleDeleteClick(category)}
+                  className="
+                  text-red-600
+                  hover:text-red-800
+                  text-lg
+                  "
+                >
+                  <FaTrash />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {isEditOpen && selectedCategory && (
+        <EditCategoryModal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          category={selectedCategory}
+          onRefresh={onRefresh}
+        />
+      )}
+
+      {isDeleteOpen && selectedCategory && (
+        <DeleteModal
+          isOpen={isDeleteOpen}
+          onClose={() => setIsDeleteOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          itemName={`Category "${selectedCategory.name}"`}
+        />
+      )}
+    </div>
+  );
+}
+
+export default CategoryTable;

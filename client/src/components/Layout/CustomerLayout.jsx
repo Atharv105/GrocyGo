@@ -1,9 +1,9 @@
-import Sidebar from "../../components/Dashboard/Sidebar";
 import { Outlet } from "react-router-dom";
+import Sidebar from "../Admin/Sidebar";
 
-function DashboardLayout() {
+function CustomerLayout() {
   return (
-    <div className="flex bg-gray-100 min-h-screen">
+    <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
 
       <div className="flex-1">
@@ -15,4 +15,4 @@ function DashboardLayout() {
   );
 }
 
-export default DashboardLayout;
+export default CustomerLayout;
