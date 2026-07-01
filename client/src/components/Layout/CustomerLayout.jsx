@@ -1,12 +1,12 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "../Admin/Sidebar";
+import CustomerSidebar from "../Dashboard/CustomerSidebar";
 
 function CustomerLayout() {
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar />
+      <CustomerSidebar />
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <main className="p-8">
           <Outlet />
         </main>

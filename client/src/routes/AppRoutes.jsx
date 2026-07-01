@@ -3,55 +3,79 @@ import { Routes, Route } from "react-router-dom";
 import MainLayout from "../components/Layout/MainLayout";
 import CustomerLayout from "../components/Layout/CustomerLayout";
 import AdminLayout from "../components/Layout/AdminLayout";
+import ProtectedRoute from "../components/Layout/ProtectedRoute";
+import AdminRoute from "../components/Layout/AdminRoute";
+import PublicOnlyRoute from "../components/Layout/PublicOnlyRoute";
+
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 
 import MyProfile from "../pages/Profile/MyProfile";
 import EditProfile from "../pages/Profile/EditProfile";
-import Dashboard from "../pages/Dashboard/Dashboard";
+
+import CustomerDashboard from "../pages/Dashboard/Dashboard";
 import Orders from "../pages/Dashboard/Orders";
 import Wishlist from "../pages/Dashboard/Wishlist";
 import PickupSlots from "../pages/Dashboard/PickupSlots";
 import Addresses from "../pages/Dashboard/Addresses";
-import Settings from "../pages/Dashboard/Settings";
+import CustomerSettings from "../pages/Dashboard/Settings";
+
 import AdminDashboard from "../pages/Admin/Dashboard";
 import Categories from "../pages/Admin/Categories";
 import Products from "../pages/Admin/Products";
+import AdminOrders from "../pages/Admin/Orders";
+import AdminCustomers from "../pages/Admin/Customers";
+import AdminPickupSlots from "../pages/Admin/PickupSlots";
+import AdminReports from "../pages/Admin/Reports";
+import AdminSettings from "../pages/Admin/Settings";
 
 function AppRoutes() {
   return (
     <Routes>
-      {/* Pages with Navbar & Footer */}
-
+      {/* ── Public pages with Navbar & Footer ───────────────── */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
-
-        <Route path="/profile" element={<MyProfile />} />
-
-        <Route path="/profile/edit" element={<EditProfile />} />
       </Route>
 
-      <Route element={<CustomerLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard/orders" element={<Orders />} />
-        <Route path="/dashboard/wishlist" element={<Wishlist />} />
-        <Route path="/dashboard/slots" element={<PickupSlots />} />
-        <Route path="/dashboard/address" element={<Addresses />} />
-        <Route path="/dashboard/settings" element={<Settings />} />
+      {/* ── Public-only routes (redirect if logged in) ──────── */}
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Route>
 
-      <Route element={<AdminLayout />}>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/categories" element={<Categories />} />
-        <Route path="/admin/products" element={<Products />} />
+      {/* ── Protected: any logged-in user ────────────────────── */}
+      <Route element={<ProtectedRoute />}>
+        {/* Profile pages use MainLayout */}
+        <Route element={<MainLayout />}>
+          <Route path="/profile" element={<MyProfile />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
+        </Route>
+
+        {/* Customer dashboard (non-admin users) */}
+        <Route element={<CustomerLayout />}>
+          <Route path="/dashboard" element={<CustomerDashboard />} />
+          <Route path="/dashboard/orders" element={<Orders />} />
+          <Route path="/dashboard/wishlist" element={<Wishlist />} />
+          <Route path="/dashboard/slots" element={<PickupSlots />} />
+          <Route path="/dashboard/address" element={<Addresses />} />
+          <Route path="/dashboard/settings" element={<CustomerSettings />} />
+        </Route>
       </Route>
 
-      {/* Pages without Navbar & Footer */}
-
-      <Route path="/login" element={<Login />} />
-
-      <Route path="/register" element={<Register />} />
+      {/* ── Admin-only routes ────────────────────────────────── */}
+      <Route element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/categories" element={<Categories />} />
+          <Route path="/admin/products" element={<Products />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/customers" element={<AdminCustomers />} />
+          <Route path="/admin/slots" element={<AdminPickupSlots />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+        </Route>
+      </Route>
     </Routes>
   );
 }
