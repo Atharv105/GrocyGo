@@ -10,6 +10,8 @@ import PublicOnlyRoute from "../components/Layout/PublicOnlyRoute";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Products from "../pages/Products";
+import Cart from "../pages/Cart";
 
 import MyProfile from "../pages/Profile/MyProfile";
 import EditProfile from "../pages/Profile/EditProfile";
@@ -23,7 +25,7 @@ import CustomerSettings from "../pages/Dashboard/Settings";
 
 import AdminDashboard from "../pages/Admin/Dashboard";
 import Categories from "../pages/Admin/Categories";
-import Products from "../pages/Admin/Products";
+import AdminProducts from "../pages/Admin/Products";
 import AdminOrders from "../pages/Admin/Orders";
 import AdminCustomers from "../pages/Admin/Customers";
 import AdminPickupSlots from "../pages/Admin/PickupSlots";
@@ -36,6 +38,8 @@ function AppRoutes() {
       {/* ── Public pages with Navbar & Footer ───────────────── */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/cart" element={<Cart />} />
       </Route>
 
       {/* ── Public-only routes (redirect if logged in) ──────── */}
@@ -68,7 +72,7 @@ function AppRoutes() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/categories" element={<Categories />} />
-          <Route path="/admin/products" element={<Products />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/customers" element={<AdminCustomers />} />
           <Route path="/admin/slots" element={<AdminPickupSlots />} />

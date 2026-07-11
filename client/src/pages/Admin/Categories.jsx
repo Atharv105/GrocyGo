@@ -1,11 +1,13 @@
 import { FaPlus } from "react-icons/fa";
 import CategoryTable from "../../components/Admin/CategoryTable";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import AddCategoryModal from "../../components/Admin/AddCategoryModal";
 import API from "../../services/api";
 
 function Categories() {
-  const [openModal, setOpenModal] = useState(false);
+  const location = useLocation();
+  const [openModal, setOpenModal] = useState(location.state?.openAdd || false);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");

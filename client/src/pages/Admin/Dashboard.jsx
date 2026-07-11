@@ -103,7 +103,9 @@ function Dashboard() {
           color="bg-emerald-600"
         />
         
-        <QuickActions />
+        <div className="col-span-1 md:col-span-2 xl:col-span-3">
+          <QuickActions />
+        </div>
         
         <div className="grid lg:grid-cols-2 gap-8 mt-8 col-span-1 md:col-span-2 xl:col-span-3">
           <RecentOrders />

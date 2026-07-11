@@ -1,11 +1,19 @@
-import { FaMapMarkerAlt } from "react-icons/fa";
+import { FaMapMarkerAlt, FaPlus } from "react-icons/fa";
 
 function Addresses() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">Addresses</h1>
-        <p className="text-gray-500 mt-1">Manage your saved delivery addresses.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Saved Addresses</h1>
+          <p className="text-gray-500 mt-1">Manage your delivery addresses.</p>
+        </div>
+        <button
+          onClick={() => alert("Address management coming soon!")}
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-semibold transition"
+        >
+          <FaPlus size={14} /> Add Address
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 flex flex-col items-center text-center">
@@ -14,8 +22,7 @@ function Addresses() {
         </div>
         <h2 className="text-xl font-bold text-gray-700">No Addresses Saved</h2>
         <p className="text-gray-400 mt-2 max-w-sm">
-          Save your home, office, or other addresses here for quick access
-          during checkout.
+          Add your delivery address so you can quickly place orders in the future.
         </p>
         <span className="mt-6 inline-flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full text-sm font-medium">
           🚧 Address management coming soon

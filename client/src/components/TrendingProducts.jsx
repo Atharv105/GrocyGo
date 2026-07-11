@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import API from "../services/api";
 
@@ -47,7 +48,8 @@ function TrendingProducts() {
             </p>
           </div>
 
-          <button
+          <Link
+            to="/products"
             className="
             hidden
             md:block
@@ -62,7 +64,7 @@ function TrendingProducts() {
             "
           >
             View All
-          </button>
+          </Link>
         </div>
 
         {loading ? (

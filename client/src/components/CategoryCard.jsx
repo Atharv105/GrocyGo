@@ -1,6 +1,9 @@
+import { Link } from "react-router-dom";
+
 function CategoryCard({ category }) {
   return (
-    <div
+    <Link
+      to={`/products?categoryId=${category.id}`}
       className="
       bg-white
       rounded-3xl
@@ -14,6 +17,7 @@ function CategoryCard({ category }) {
       flex
       flex-col
       items-center
+      text-center
       "
     >
       <div
@@ -28,7 +32,7 @@ function CategoryCard({ category }) {
         text-5xl
         "
       >
-        {category.image}
+        {category.image || "🛍️"}
       </div>
 
       <h3
@@ -41,7 +45,11 @@ function CategoryCard({ category }) {
       >
         {category.name}
       </h3>
-    </div>
+
+      {category.description && (
+        <p className="text-sm text-gray-400 mt-2 line-clamp-2">{category.description}</p>
+      )}
+    </Link>
   );
 }
 
