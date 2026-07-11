@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, Menu } from "lucide-react";
 import { useState, useRef, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext";
 
 import {
   FaUserCircle,
@@ -14,6 +14,7 @@ import {
 function Navbar() {
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useContext(AuthContext);
+  const { cartCount } = useContext(CartContext);
 
   const [openProfile, setOpenProfile] = useState(false);
   const profileRef = useRef(null);
@@ -86,6 +87,12 @@ function Navbar() {
 
           {/* Right Side */}
           <div className="hidden md:flex items-center gap-4">
+            <Link
+              to="/products"
+              className="px-4 py-2 text-green-700 font-medium hover:bg-green-50 rounded-full transition"
+            >
+              🛍️ Shop
+            </Link>
             {!isLoggedIn ? (
               <>
                 <Link
@@ -122,7 +129,8 @@ function Navbar() {
             ) : (
               <>
                 {/* Cart */}
-                <button
+                <Link
+                  to="/cart"
                   className="
     relative
     p-3
@@ -133,25 +141,27 @@ function Navbar() {
                 >
                   <ShoppingCart size={24} className="text-green-700" />
 
-                  <span
-                    className="
-      absolute
-      -top-1
-      -right-1
-      bg-orange-500
-      text-white
-      text-xs
-      w-5
-      h-5
-      rounded-full
-      flex
-      items-center
-      justify-center
-      "
-                  >
-                    2
-                  </span>
-                </button>
+                  {cartCount > 0 && (
+                    <span
+                      className="
+        absolute
+        -top-1
+        -right-1
+        bg-orange-500
+        text-white
+        text-xs
+        w-5
+        h-5
+        rounded-full
+        flex
+        items-center
+        justify-center
+        "
+                    >
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
 
                 {/* Profile */}
                 <div className="relative" ref={profileRef}>
