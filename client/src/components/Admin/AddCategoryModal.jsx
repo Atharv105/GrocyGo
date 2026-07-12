@@ -1,12 +1,68 @@
-import { useState } from "react";
-import { FaTimes } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaTimes, FaCloud } from "react-icons/fa";
 import API from "../../services/api";
+import CloudinaryGalleryModal from "./CloudinaryGalleryModal";
 
 function AddCategoryModal({ isOpen, onClose, onRefresh }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(""); // Emojis like "🍊" or image URL
   const [loading, setLoading] = useState(false);
+  const [cloudinaryCategories, setCloudinaryCategories] = useState([]);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const loadCloudinary = async () => {
+        try {
+          const res = await API.get("/cloudinary/images");
+          if (res.data.success) {
+            setCloudinaryCategories(res.data.data.categories);
+          }
+        } catch (err) {
+          console.error("Failed to load Cloudinary category images", err);
+        }
+      };
+      loadCloudinary();
+    }
+  }, [isOpen]);
+
+  const normalize = (str) => {
+    if (!str) return "";
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  };
+
+  const autoSelectImage = (catName) => {
+    if (!catName || !cloudinaryCategories.length) return;
+    const normTyped = normalize(catName);
+
+    // Try finding exact folder match
+    let match = cloudinaryCategories.find((c) => normalize(c.folderName) === normTyped);
+
+    // If not found, try keyword substring match
+    if (!match) {
+      match = cloudinaryCategories.find((c) => {
+        const normFolder = normalize(c.folderName);
+        return normTyped.includes(normFolder) || normFolder.includes(normTyped);
+      });
+    }
+
+    // Try matching file prefix
+    if (!match) {
+      match = cloudinaryCategories.find((c) => {
+        const normFile = normalize(c.filename);
+        return normTyped.includes(normFile) || normFile.includes(normTyped);
+      });
+    }
+
+    if (match) {
+      setImage(match.url);
+    }
+  };
+
+  useEffect(() => {
+    autoSelectImage(name);
+  }, [name, cloudinaryCategories]);
 
   if (!isOpen) return null;
 
@@ -80,18 +136,45 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
             />
           </div>
 
-          {/* Emoji/Icon */}
+          {/* Image/Emoji */}
           <div>
-            <label className="font-medium text-gray-700">Category Emoji / Icon *</label>
-            <input
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="Enter an emoji (e.g. 🥦 or 🍎)"
-              maxLength={10}
-              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none text-2xl"
-              required
-            />
+            <label className="font-medium text-gray-700">Category Image URL / Emoji *</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                placeholder="Enter emoji (e.g. 🥦) or Cloudinary URL"
+                className="flex-1 mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setGalleryOpen(true)}
+                className="mt-2 bg-green-550 border border-green-600 hover:bg-green-50 text-green-700 font-semibold px-4 rounded-xl flex items-center gap-1.5 transition text-sm shadow-sm"
+              >
+                <FaCloud /> Gallery
+              </button>
+            </div>
+
+            {/* Preview */}
+            {image && (
+              <div className="mt-3 p-3 bg-gray-50 border rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                {image.startsWith("http") ? (
+                  <img
+                    src={image}
+                    className="w-14 h-14 object-cover rounded-lg border bg-white"
+                    alt="Preview"
+                  />
+                ) : (
+                  <span className="text-4xl p-1 bg-white border rounded-lg">{image}</span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500">Image Preview</p>
+                  <p className="text-xs text-gray-700 truncate font-mono">{image}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -114,6 +197,19 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
           </div>
         </form>
       </div>
+
+      {galleryOpen && (
+        <CloudinaryGalleryModal
+          isOpen={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+          onSelect={(url) => {
+            setImage(url);
+            setGalleryOpen(false);
+          }}
+          initialTab="categories"
+          currentCategoryName={name}
+        />
+      )}
     </div>
   );
 }

@@ -44,8 +44,14 @@ function ProductCard({ product }) {
       </div>
 
       {/* Product image + info */}
-      <div className="text-center mt-2 flex-1">
-        <div className="text-7xl">{product.image || "📦"}</div>
+      <div className="text-center mt-2 flex-1 flex flex-col items-center">
+        <div className="w-32 h-32 flex items-center justify-center overflow-hidden rounded-2xl bg-gray-50 border shadow-sm">
+          {product.image && product.image.startsWith("http") ? (
+            <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
+          ) : (
+            <span className="text-7xl">{product.image || "📦"}</span>
+          )}
+        </div>
 
         <h3 className="mt-5 text-lg font-bold text-gray-800">{product.name}</h3>
 

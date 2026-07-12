@@ -66,7 +66,13 @@ function CategoryTable({ categories, loading, onRefresh }) {
               key={category.id}
               className="border-b hover:bg-gray-50 text-center"
             >
-              <td className="p-5 text-3xl">{category.image || "📦"}</td>
+              <td className="p-3">
+                {category.image && category.image.startsWith("http") ? (
+                  <img src={category.image} className="w-12 h-12 object-cover rounded-xl border bg-white mx-auto shadow-sm" alt={category.name} />
+                ) : (
+                  <span className="text-3xl">{category.image || "📦"}</span>
+                )}
+              </td>
               <td className="font-semibold text-gray-800">{category.name}</td>
               <td className="text-gray-500 max-w-xs truncate">{category.description || "No description"}</td>
               <td>
