@@ -173,7 +173,13 @@ function Products() {
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} className="border-b hover:bg-gray-50 text-center">
-                  <td className="p-4 text-4xl">{product.image || "📦"}</td>
+                  <td className="p-2">
+                    {product.image && product.image.startsWith("http") ? (
+                      <img src={product.image} className="w-12 h-12 object-cover rounded-xl border bg-white mx-auto shadow-sm" alt={product.name} />
+                    ) : (
+                      <span className="text-4xl">{product.image || "📦"}</span>
+                    )}
+                  </td>
                   <td className="font-semibold text-gray-800">{product.name}</td>
                   <td className="text-gray-500">{product.Category?.name || "N/A"}</td>
                   <td className="font-semibold text-green-700">₹{product.price}</td>

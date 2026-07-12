@@ -9,8 +9,12 @@ import { AuthContext } from "../context/AuthContext";
 function ProductCard({ product, onAddToCart, adding }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
-      <div className="h-44 bg-gradient-to-br from-green-50 to-orange-50 flex items-center justify-center text-6xl relative">
-        {product.image || "🛍️"}
+      <div className="h-44 bg-gradient-to-br from-green-50 to-orange-50 flex items-center justify-center text-6xl relative overflow-hidden">
+        {product.image && product.image.startsWith("http") ? (
+          <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
+        ) : (
+          product.image || "🛍️"
+        )}
         {product.stock <= 5 && product.stock > 0 && (
           <span className="absolute top-3 right-3 bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">
             Low Stock
@@ -201,7 +205,15 @@ function Products() {
                       : "hover:bg-green-50 text-gray-700"
                   }`}
                 >
-                  {cat.image && <span className="mr-2">{cat.image}</span>}
+                  {cat.image && (
+                    <span className="mr-2 inline-block align-middle">
+                      {cat.image.startsWith("http") ? (
+                        <img src={cat.image} className="w-5 h-5 object-cover rounded-full inline" alt="" />
+                      ) : (
+                        cat.image
+                      )}
+                    </span>
+                  )}
                   {cat.name}
                 </button>
               ))}

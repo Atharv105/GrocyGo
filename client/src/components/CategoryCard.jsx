@@ -30,9 +30,15 @@ function CategoryCard({ category }) {
         items-center
         justify-center
         text-5xl
+        overflow-hidden
+        border
         "
       >
-        {category.image || "🛍️"}
+        {category.image && category.image.startsWith("http") ? (
+          <img src={category.image} className="w-full h-full object-cover" alt={category.name} />
+        ) : (
+          category.image || "🛍️"
+        )}
       </div>
 
       <h3

@@ -98,8 +98,12 @@ function Cart() {
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-5"
                 >
                   {/* Image */}
-                  <div className="w-20 h-20 bg-gradient-to-br from-green-50 to-orange-50 rounded-xl flex items-center justify-center text-4xl shrink-0">
-                    {item.image || "📦"}
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-50 to-orange-50 rounded-xl flex items-center justify-center text-4xl shrink-0 overflow-hidden border border-gray-100 shadow-sm">
+                    {item.image && item.image.startsWith("http") ? (
+                      <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                    ) : (
+                      item.image || "📦"
+                    )}
                   </div>
 
                   {/* Details */}

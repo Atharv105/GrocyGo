@@ -5,6 +5,7 @@ const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const cartRoutes = require("./routes/cartRoutes");
+const cloudinaryRoutes = require("./routes/cloudinaryRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const app = express();
 
@@ -18,6 +19,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products",productRoutes);
 app.use("/api/cart",cartRoutes);
+app.use("/api/cloudinary", cloudinaryRoutes);
 
 // Error Middleware (Always Last)
 app.use(errorMiddleware);
