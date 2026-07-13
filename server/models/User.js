@@ -16,13 +16,13 @@ const User = sequelize.define(
     },
 
     mobile: {
-    type: DataTypes.STRING(10),
-    allowNull: false,
-    unique: true,
-    validate: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+      unique: true,
+      validate: {
         len: [10, 10]
-    }
-},
+      }
+    },
 
     password: {
       type: DataTypes.STRING,
