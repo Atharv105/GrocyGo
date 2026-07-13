@@ -117,7 +117,7 @@ VALUES
 (45,'Frozen Corn','Golden sweet corn kernels, frozen',70.00,35,'500g','https://res.cloudinary.com/n0he2dk8/image/upload/v1783860868/frozen_corn_jocrzx.png',1,8),
 (46,'Frozen Paratha','Ready-to-cook wheat parathas, pack of 5',90.00,30,'Pack','https://res.cloudinary.com/n0he2dk8/image/upload/v1783860579/Freshly_frozen_vtq8rm.png',1,8),
 (47,'Chicken Nuggets','Crispy breaded chicken nuggets, 15 pcs',180.00,3,'Pack','https://res.cloudinary.com/n0he2dk8/image/upload/v1783860609/Chicken_Nuggets_sqbur2.png',1,8),
-(48,'Hapus Mango','Fresh and sweet',300.00,5,'12 pcs','https://res.cloudinary.com/n0he2dk8/image/upload/v1783861239/whole_wheat_bread_sdos3n.png',1,1);
+(48,'Hapus Mango','Fresh and sweet',300.00,5,'12 pcs','https://res.cloudinary.com/n0he2dk8/image/upload/v1783875244/Hapus_mango_tcwsas.jpg',1,1);
 
 -- Note: Chicken Nuggets stock = 3 (will appear as "Low Stock" in the admin panel)
 
