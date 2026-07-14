@@ -31,7 +31,7 @@ function CustomerSidebar() {
   };
 
   return (
-    <aside className="w-72 bg-gradient-to-b from-green-700 to-green-900 text-white min-h-screen shadow-xl flex flex-col">
+    <aside className="w-72 bg-gradient-to-b from-green-700 to-green-900 text-white h-screen shadow-xl flex flex-col">
       {/* User Info */}
       <div className="p-8 border-b border-green-600">
         <div className="flex items-center gap-3">
@@ -48,7 +48,7 @@ function CustomerSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         {menus.map((menu) => (
           <NavLink
             key={menu.title}

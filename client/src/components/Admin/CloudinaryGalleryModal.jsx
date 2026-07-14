@@ -47,17 +47,19 @@ function CloudinaryGalleryModal({ isOpen, onClose, onSelect, initialTab = "produ
   const currentList = activeTab === "products" ? images.products : images.categories;
 
   const uniqueFolders = [
-    ...new Set(currentList.map((img) => img.folderName)),
-  ].sort();
+    ...new Set(currentList.map((img) => img.folderName || "")),
+  ].filter(Boolean).sort();
 
   const filteredImages = currentList.filter((img) => {
+    const filename = img.filename || "";
+    const folderName = img.folderName || "";
     const matchesSearch =
-      img.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      img.folderName.toLowerCase().includes(searchQuery.toLowerCase());
+      filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      folderName.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (selectedFolder) {
       const normSelected = normalize(selectedFolder);
-      const normImgFolder = normalize(img.folderName);
+      const normImgFolder = normalize(folderName);
       
       // Category folder name matching database category name mapping helper
       const matchesFolder =
@@ -195,11 +197,11 @@ function CloudinaryGalleryModal({ isOpen, onClose, onSelect, initialTab = "produ
 
                   {/* Text details */}
                   <div className="p-3.5 flex flex-col justify-between flex-1">
-                    <p className="text-xs font-bold text-gray-700 truncate" title={img.filename}>
-                      {img.filename.replace(/_[a-z0-9]+$/i, "").replace(/_/g, " ")}
+                    <p className="text-xs font-bold text-gray-700 truncate" title={img.filename || ""}>
+                      {(img.filename || "").replace(/_[a-z0-9]+$/i, "").replace(/_/g, " ")}
                     </p>
                     <p className="text-[10px] text-green-600 font-semibold uppercase tracking-wider mt-1 truncate">
-                      {img.folderName.replace(/_/g, " ")}
+                      {(img.folderName || "").replace(/_/g, " ")}
                     </p>
                   </div>
                 </div>

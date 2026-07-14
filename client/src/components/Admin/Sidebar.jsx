@@ -10,9 +10,12 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const {logout} = useContext(AuthContext);
 
   const menus = [
     {
@@ -58,14 +61,12 @@ function Sidebar() {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
+    logout();
     navigate("/login");
   };
 
   return (
-    <aside className="w-72 bg-gradient-to-b from-green-700 to-green-900 text-white min-h-screen shadow-xl flex flex-col">
+    <aside className="w-72 bg-gradient-to-b from-green-700 to-green-900 text-white h-screen shadow-xl flex flex-col">
       {/* Logo */}
       <div className="p-8 border-b border-green-600">
         <h1 className="text-3xl font-bold">🛒 GrocyGo</h1>
@@ -74,7 +75,7 @@ function Sidebar() {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         {menus.map((menu) => (
           <NavLink
             key={menu.title}

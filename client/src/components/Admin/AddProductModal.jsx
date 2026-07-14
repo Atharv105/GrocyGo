@@ -3,11 +3,34 @@ import { FaTimes, FaCloud } from "react-icons/fa";
 import API from "../../services/api";
 import CloudinaryGalleryModal from "./CloudinaryGalleryModal";
 
+const UNIT_OPTIONS = [
+  "1kg",
+  "500g",
+  "250g",
+  "200g",
+  "150g",
+  "100g",
+  "50g",
+  "1L",
+  "750ml",
+  "500ml",
+  "250ml",
+  "1 pc",
+  "2 pcs",
+  "4 pcs",
+  "6 pcs",
+  "12 pcs",
+  "Pack",
+  "Tray",
+  "Other"
+];
+
 function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [unit, setUnit] = useState("");
+  const [customUnit, setCustomUnit] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
@@ -91,7 +114,9 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !price || !stock || !unit.trim() || !categoryId || !image.trim()) {
+    const finalUnit = unit === "Other" ? customUnit.trim() : unit.trim();
+
+    if (!name.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
       alert("All fields marked with * are required");
       return;
     }
@@ -115,7 +140,7 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
         name: name.trim(),
         price: priceNum,
         stock: stockNum,
-        unit: unit.trim(),
+        unit: finalUnit,
         categoryId: parseInt(categoryId),
         description: description.trim(),
         image: image.trim(),
@@ -188,15 +213,20 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
 
             {/* Unit */}
             <div>
-              <label className="font-medium text-gray-700">Unit (e.g. 1 Kg, 500 ml) *</label>
-              <input
-                type="text"
+              <label className="font-medium text-gray-700">Unit *</label>
+              <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                placeholder="Unit size"
-                className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none bg-white"
                 required
-              />
+              >
+                <option value="">Select Unit</option>
+                {UNIT_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Category */}
@@ -211,11 +241,26 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.image} {cat.name}
+                    {cat.name}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Custom Unit Specification */}
+            {unit === "Other" && (
+              <div className="col-span-2">
+                <label className="font-medium text-gray-700">Specify Custom Unit *</label>
+                <input
+                  type="text"
+                  value={customUnit}
+                  onChange={(e) => setCustomUnit(e.target.value)}
+                  placeholder="Enter custom unit (e.g. 73g, 1.5kg)"
+                  className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {/* Description */}
