@@ -34,6 +34,11 @@ const Order = sequelize.define(
       ),
       defaultValue: "PENDING",
     },
+
+    slotId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
   },
   {
     tableName: "orders",
