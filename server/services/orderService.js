@@ -1,6 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 const { sequelize, Cart, CartItem, Product, Order, OrderItem, User } = require("../models");
 =======
+=======
+>>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
 const {
   sequelize,
   Cart,
@@ -10,7 +13,10 @@ const {
   OrderItem,
   Slot,
 } = require("../models");
+<<<<<<< HEAD
 >>>>>>> 1d55b7275f3ec53e208241c56e1f27bb584a5d40
+=======
+>>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
 const AppError = require("../utils/AppError");
 
 
@@ -439,6 +445,7 @@ const updateOrderPaymentStatusAdmin = async (orderId, paymentStatus) => {
 
 module.exports = {
 <<<<<<< HEAD
+<<<<<<< HEAD
     checkout,
     getMyOrders,
     getOrderById,
@@ -448,9 +455,14 @@ module.exports = {
     updateOrderStatusAdmin,
     updateOrderPaymentStatusAdmin,
 =======
+=======
+>>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
   checkout,
   getMyOrders,
   getOrderById,
   cancelOrder,
+<<<<<<< HEAD
 >>>>>>> 1d55b7275f3ec53e208241c56e1f27bb584a5d40
+=======
+>>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
 };
