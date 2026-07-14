@@ -307,6 +307,132 @@ const cancelOrder = async (userId, orderId) => {
 };
 
 
+const getAllOrdersAdmin = async () => {
+  const orders = await Order.findAll({
+    include: [
+      {
+        model: User,
+        attributes: ["id", "name", "mobile"],
+      },
+    ],
+    order: [["createdAt", "DESC"]],
+  });
+
+  return orders;
+};
+
+const getOrderByIdAdmin = async (orderId) => {
+  const order = await Order.findOne({
+    where: {
+      id: orderId,
+    },
+    include: [
+      {
+        model: User,
+        attributes: ["id", "name", "mobile"],
+      },
+      {
+        model: OrderItem,
+        include: [
+          {
+            model: Product,
+            attributes: ["id", "name", "image", "unit", "price"],
+          },
+        ],
+      },
+    ],
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  return order;
+};
+
+const updateOrderStatusAdmin = async (orderId, status) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const order = await Order.findByPk(orderId, {
+      include: [
+        {
+          model: OrderItem,
+        },
+      ],
+      transaction,
+    });
+
+    if (!order) {
+      throw new AppError("Order not found", 404);
+    }
+
+    const validStatuses = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
+    if (!validStatuses.includes(status)) {
+      throw new AppError("Invalid order status", 400);
+    }
+
+    // Handle stock restoration if order is cancelled
+    if (status === "CANCELLED" && order.status !== "CANCELLED") {
+      for (const item of order.OrderItems) {
+        const product = await Product.findByPk(item.productId, {
+          transaction,
+        });
+
+        if (product) {
+          product.stock += item.quantity;
+          await product.save({ transaction });
+        }
+      }
+    }
+
+    // Handle stock re-deduction if status goes back to active from cancelled
+    if (order.status === "CANCELLED" && status !== "CANCELLED") {
+      for (const item of order.OrderItems) {
+        const product = await Product.findByPk(item.productId, {
+          transaction,
+        });
+
+        if (product) {
+          if (product.stock < item.quantity) {
+            throw new AppError(`Insufficient stock for "${product.name}" to reactivate order`, 400);
+          }
+          product.stock -= item.quantity;
+          await product.save({ transaction });
+        }
+      }
+    }
+
+    order.status = status;
+    await order.save({ transaction });
+
+    await transaction.commit();
+    return order;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
+const updateOrderPaymentStatusAdmin = async (orderId, paymentStatus) => {
+  const order = await Order.findByPk(orderId);
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  const validPaymentStatuses = ["PENDING", "PAID", "FAILED"];
+  if (!validPaymentStatuses.includes(paymentStatus)) {
+    throw new AppError("Invalid payment status", 400);
+  }
+
+  order.paymentStatus = paymentStatus;
+  await order.save();
+
+  return order;
+};
+
+
 module.exports = {
   checkout,
   getMyOrders,

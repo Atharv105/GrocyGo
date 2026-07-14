@@ -8,8 +8,9 @@ import {
   FaChartBar,
   FaCog,
   FaSignOutAlt,
+  FaTachometerAlt,
 } from "react-icons/fa";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -19,8 +20,13 @@ function Sidebar() {
 
   const menus = [
     {
-      title: "Dashboard",
+      title: "Store Home",
       icon: <FaHome />,
+      path: "/",
+    },
+    {
+      title: "Dashboard",
+      icon: <FaTachometerAlt />,
       path: "/admin",
     },
     {
@@ -68,11 +74,11 @@ function Sidebar() {
   return (
     <aside className="w-72 bg-gradient-to-b from-green-700 to-green-900 text-white h-screen shadow-xl flex flex-col">
       {/* Logo */}
-      <div className="p-8 border-b border-green-600">
+      <Link to="/" className="p-8 border-b border-green-600 block hover:bg-green-800/30 transition">
         <h1 className="text-3xl font-bold">🛒 GrocyGo</h1>
 
         <p className="text-green-200 mt-2">Admin Panel</p>
-      </div>
+      </Link>
 
       {/* Menu */}
       <nav className="flex-1 p-4 overflow-y-auto">
