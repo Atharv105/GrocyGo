@@ -1,13 +1,41 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, ShoppingBag, CheckCircle, AlertTriangle } from "lucide-react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import * as orderService from "../services/orderService";
 
 function Cart() {
   const navigate = useNavigate();
   const { isLoggedIn } = useContext(AuthContext);
-  const { cartItems, cartTotal, cartLoading, updateQuantity, removeFromCart, clearCart } = useContext(CartContext);
+  const { cartItems, cartTotal, cartLoading, updateQuantity, removeFromCart, clearCart, fetchCart } = useContext(CartContext);
+
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [checkoutSuccessOrder, setCheckoutSuccessOrder] = useState(null);
+  const [checkoutError, setCheckoutError] = useState(null);
+
+  const handleCheckout = async () => {
+    try {
+      setIsCheckoutLoading(true);
+      setCheckoutError(null);
+      const res = await orderService.checkout();
+      if (res.success) {
+        setCheckoutSuccessOrder(res.data);
+        await fetchCart();
+      } else {
+        setCheckoutError(res.message || "Failed to place order");
+      }
+    } catch (err) {
+      console.error(err);
+      setCheckoutError(
+        err.response?.data?.message || 
+        err.message || 
+        "Something went wrong while placing your order."
+      );
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
   if (!isLoggedIn) {
     return (
@@ -170,12 +198,29 @@ function Cart() {
                 </div>
               </div>
 
+              {checkoutError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-2 animate-shake">
+                  <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                  <span>{checkoutError}</span>
+                </div>
+              )}
+
               <button
-                className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2"
-                onClick={() => alert("Order placement coming soon! 🚧")}
+                className="w-full mt-6 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 shadow-md shadow-green-200"
+                onClick={handleCheckout}
+                disabled={isCheckoutLoading}
               >
-                <ShoppingCart size={20} />
-                Place Order
+                {isCheckoutLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={20} />
+                    Place Order
+                  </>
+                )}
               </button>
 
               <Link
@@ -188,6 +233,60 @@ function Cart() {
           </div>
         </div>
       </div>
+
+      {/* Checkout Success Modal */}
+      {checkoutSuccessOrder && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border border-gray-100 transform scale-100 transition-all">
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle size={48} className="text-green-500 animate-bounce" />
+            </div>
+            
+            <h2 className="text-3xl font-extrabold text-gray-800 mb-2">Order Placed! 🎉</h2>
+            <p className="text-gray-500 mb-6">
+              Thank you for shopping with GrocyGo. Your order has been registered successfully.
+            </p>
+
+            <div className="bg-gray-50 rounded-2xl p-5 mb-8 text-left border border-gray-100 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Order ID:</span>
+                <span className="font-bold text-gray-800">#{checkoutSuccessOrder.id}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Total Amount:</span>
+                <span className="font-bold text-green-700">₹{parseFloat(checkoutSuccessOrder.totalAmount || 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Order Status:</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                  {checkoutSuccessOrder.status}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Payment Status:</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-100">
+                  {checkoutSuccessOrder.paymentStatus}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate("/dashboard/orders")}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-green-100"
+              >
+                Track My Orders
+              </button>
+              <button
+                onClick={() => navigate("/products")}
+                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 py-3.5 rounded-xl font-semibold transition border border-gray-200"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
