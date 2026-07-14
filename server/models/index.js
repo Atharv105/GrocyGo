@@ -12,6 +12,7 @@ db.Cart = require("./Cart");
 db.CartItem = require("./CartItem");
 db.Order = require("./Order");
 db.OrderItem = require("./OrderItem");
+db.Slot = require("./Slot");
 
 // Relationships
 db.Category.hasMany(db.Product,{
@@ -86,6 +87,16 @@ db.OrderItem.belongsTo(db.Product, {
   foreignKey: "productId",
 });
 
+
+// Slot ↔ Order
+
+db.Slot.hasMany(db.Order, {
+  foreignKey: "slotId",
+});
+
+db.Order.belongsTo(db.Slot, {
+  foreignKey: "slotId",
+});
 
 
 module.exports = db;
