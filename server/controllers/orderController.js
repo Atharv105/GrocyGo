@@ -112,6 +112,23 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const order = await orderService.updatePaymentStatus(
+      req.params.id,
+      req.body.paymentStatus
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
@@ -120,4 +137,5 @@ module.exports = {
   getAllOrders,
   getAdminOrderById,
   updateOrderStatus,
+  updatePaymentStatus,
 };
