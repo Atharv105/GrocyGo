@@ -76,15 +76,33 @@ function CategoryTable({ categories, loading, onRefresh }) {
               <td className="font-semibold text-gray-800">{category.name}</td>
               <td className="text-gray-500 max-w-xs truncate">{category.description || "No description"}</td>
               <td>
-                <span
-                  className={`px-4 py-1 rounded-full text-xs font-semibold ${
+                <select
+                  value={category.isActive ? "true" : "false"}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value === "true";
+                    try {
+                      const res = await API.put(`/categories/${category.id}`, {
+                        isActive: newStatus
+                      });
+                      if (res.data.success) {
+                        onRefresh();
+                      } else {
+                        alert(res.data.message || "Failed to update category status");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert(err.response?.data?.message || "Failed to update category status");
+                    }
+                  }}
+                  className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${
                     category.isActive
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
+                      ? "bg-green-50 text-green-700 border-green-200 focus:ring-green-400"
+                      : "bg-gray-50 text-gray-700 border-gray-200 focus:ring-gray-400"
                   }`}
                 >
-                  {category.isActive ? "Active" : "Inactive"}
-                </span>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
               </td>
 
               <td>

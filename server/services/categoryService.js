@@ -20,11 +20,13 @@ const createCategory = async (categoryData) => {
 };
 
 // Get All Categories
-const getAllCategories = async () => {
+const getAllCategories = async (query = {}) => {
+  const where = {};
+  if (query.includeInactive !== "true") {
+    where.isActive = true;
+  }
   const categories = await Category.findAll({
-    where: {
-      isActive: true,
-    },
+    where,
     order: [["createdAt", "DESC"]],
   });
 
@@ -33,12 +35,7 @@ const getAllCategories = async () => {
 
 // Get Category By ID
 const getCategoryById = async (id) => {
-  const category = await Category.findOne({
-    where: {
-      id,
-      isActive: true,
-    },
-  });
+  const category = await Category.findByPk(id);
 
   if (!category) {
     throw new AppError("Category not found", 404);

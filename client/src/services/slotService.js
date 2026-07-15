@@ -21,3 +21,7 @@ export const generateSlots = (data) =>
 /** Customer/Admin: Get available slots by date (YYYY-MM-DD) */
 export const getAvailableSlots = (date) =>
   API.get("/slots/available", { params: { date } }).then((r) => r.data);
+
+/** Admin: Update slot by ID */
+export const updateSlot = (slotId, slotData) =>
+  API.put(`/slots/${slotId}`, slotData).then((r) => r.data);

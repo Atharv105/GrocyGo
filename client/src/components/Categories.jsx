@@ -11,7 +11,8 @@ function Categories() {
       try {
         const res = await API.get("/categories");
         if (res.data.success) {
-          setCategories(res.data.data);
+          const activeCats = res.data.data.filter(c => c.isActive);
+          setCategories(activeCats);
         }
       } catch (err) {
         console.error("Error fetching categories:", err);

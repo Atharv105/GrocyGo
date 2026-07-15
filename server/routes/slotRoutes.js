@@ -5,7 +5,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 
-const { createSlot , getAllSlots, generateSlots, getAvailableSlots} = require("../controllers/slotController");
+const { createSlot , getAllSlots, generateSlots, getAvailableSlots, updateSlot} = require("../controllers/slotController");
 
 router.post(
   "/",
@@ -32,6 +32,13 @@ router.get(
   "/available",
   authMiddleware,
   getAvailableSlots
+);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  updateSlot
 );
 
 module.exports = router;

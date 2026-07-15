@@ -108,7 +108,7 @@ function AdminReports() {
   const chartHeight = 150;
   const barWidth = 44;
   const gap = 30;
-  const paddingLeft = 50;
+  const paddingLeft = 75;
 
   return (
     <div className="space-y-8">
@@ -152,22 +152,22 @@ function AdminReports() {
               <div className="text-gray-400 text-sm mb-20">No sales records to plot.</div>
             ) : (
               <div className="w-full h-full relative">
-                <svg viewBox="0 0 600 240" className="w-full h-full">
+                <svg viewBox="0 0 600 240" className="w-full h-full" style={{ overflow: "visible" }}>
                   {/* Grid Lines */}
-                  <line x1="50" y1="20" x2="570" y2="20" stroke="#f9fafb" strokeWidth="1" />
-                  <line x1="50" y1="70" x2="570" y2="70" stroke="#f9fafb" strokeWidth="1" />
-                  <line x1="50" y1="120" x2="570" y2="120" stroke="#f9fafb" strokeWidth="1" />
-                  <line x1="50" y1="170" x2="570" y2="170" stroke="#f3f4f6" strokeWidth="1.5" />
+                  <line x1="75" y1="40" x2="580" y2="40" stroke="#f9fafb" strokeWidth="1" />
+                  <line x1="75" y1="90" x2="580" y2="90" stroke="#f9fafb" strokeWidth="1" />
+                  <line x1="75" y1="140" x2="580" y2="140" stroke="#f9fafb" strokeWidth="1" />
+                  <line x1="75" y1="190" x2="580" y2="190" stroke="#f3f4f6" strokeWidth="1.5" />
                   
                   {/* Y-Axis Labels */}
-                  <text x="35" y="24" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue).toLocaleString()}</text>
-                  <text x="35" y="98" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue / 2).toLocaleString()}</text>
-                  <text x="35" y="174" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹0</text>
+                  <text x="60" y="44" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue).toLocaleString()}</text>
+                  <text x="60" y="119" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue / 2).toLocaleString()}</text>
+                  <text x="60" y="194" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹0</text>
 
                   {dailySales.map((day, index) => {
                     const barHeight = (day.revenue / maxRevenue) * chartHeight;
                     const x = paddingLeft + index * (barWidth + gap) + 15;
-                    const y = 170 - barHeight;
+                    const y = 190 - barHeight;
                     const isHovered = hoveredBarIndex === index;
 
                     return (
@@ -180,9 +180,9 @@ function AdminReports() {
                         {/* Hover Overlay */}
                         <rect
                           x={x - 8}
-                          y="10"
+                          y="30"
                           width={barWidth + 16}
-                          height="160"
+                          height="170"
                           fill={isHovered ? "rgba(243, 244, 246, 0.45)" : "transparent"}
                           rx="10"
                           className="transition-colors duration-150"
@@ -202,7 +202,7 @@ function AdminReports() {
                         {/* Label */}
                         <text
                           x={x + barWidth / 2}
-                          y="190"
+                          y="210"
                           textAnchor="middle"
                           className={`text-[10px] font-bold transition-colors duration-150 ${isHovered ? "fill-gray-800" : "fill-gray-400"}`}
                         >

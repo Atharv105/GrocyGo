@@ -315,14 +315,33 @@ function AdminPickupSlots() {
                               </div>
                             </td>
                             <td className="py-3.5">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                slot.isActive
-                                  ? "bg-green-50 text-green-700 border border-green-100"
-                                  : "bg-gray-50 text-gray-500 border border-gray-100"
-                              }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${slot.isActive ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
-                                {slot.isActive ? "Active" : "Inactive"}
-                              </span>
+                              <select
+                                value={slot.isActive ? "true" : "false"}
+                                onChange={async (e) => {
+                                  const newStatus = e.target.value === "true";
+                                  try {
+                                    const res = await slotService.updateSlot(slot.id, {
+                                      isActive: newStatus
+                                    });
+                                    if (res.success) {
+                                      fetchSlots();
+                                    } else {
+                                      alert(res.message || "Failed to update slot status");
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert(err.response?.data?.message || "Failed to update slot status");
+                                  }
+                                }}
+                                className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${
+                                  slot.isActive
+                                    ? "bg-green-50 text-green-700 border-green-200 focus:ring-green-400"
+                                    : "bg-gray-50 text-gray-700 border-gray-200 focus:ring-gray-400"
+                                }`}
+                              >
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                              </select>
                             </td>
                           </tr>
                         );

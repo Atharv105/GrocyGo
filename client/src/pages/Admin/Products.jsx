@@ -28,6 +28,7 @@ function Products() {
         page,
         limit: 10,
         search,
+        includeInactive: "true",
       });
       if (selectedCategory) {
         queryParams.append("categoryId", selectedCategory);
@@ -47,7 +48,7 @@ function Products() {
 
   const fetchCategories = async () => {
     try {
-      const res = await API.get("/categories");
+      const res = await API.get("/categories?includeInactive=true");
       if (res.data.success) {
         setCategories(res.data.data);
       }
@@ -137,11 +138,14 @@ function Products() {
             className="w-full border px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-gray-700 bg-white"
           >
             <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.image} {cat.name}
-              </option>
-            ))}
+            {categories.map((cat) => {
+              const displayEmoji = cat.image && !cat.image.startsWith("http") ? cat.image + " " : "";
+              return (
+                <option key={cat.id} value={cat.id}>
+                  {displayEmoji}{cat.name}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -188,13 +192,40 @@ function Products() {
                   </td>
                   <td className="text-gray-500">{product.unit}</td>
                   <td>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        product.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    <select
+                      value={product.isActive ? "true" : "false"}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value === "true";
+                        try {
+                          const res = await API.put(`/products/${product.id}`, {
+                            name: product.name,
+                            description: product.description,
+                            price: product.price,
+                            stock: product.stock,
+                            unit: product.unit,
+                            image: product.image,
+                            categoryId: product.categoryId,
+                            isActive: newStatus
+                          });
+                          if (res.data.success) {
+                            fetchProducts();
+                          } else {
+                            alert(res.data.message || "Failed to update product status");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert(err.response?.data?.message || "Failed to update product status");
+                        }
+                      }}
+                      className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${
+                        product.isActive
+                          ? "bg-green-50 text-green-700 border-green-200 focus:ring-green-400"
+                          : "bg-red-50 text-red-700 border-red-200 focus:ring-red-400"
                       }`}
                     >
-                      {product.isActive ? "Active" : "Inactive"}
-                    </span>
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
                   </td>
                   <td>
                     <button

@@ -1,9 +1,9 @@
-import { FaBell, FaUserCircle, FaSearch, FaArrowLeft, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { FaBell, FaUserCircle, FaSearch, FaArrowLeft, FaSignOutAlt, FaCog, FaBars } from "react-icons/fa";
 import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
-function Topbar() {
+function Topbar({ toggleSidebar }) {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -28,20 +28,29 @@ function Topbar() {
   }, []);
 
   return (
-    <header className="bg-white shadow-sm border-b px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+    <header className="bg-white shadow-sm border-b px-4 md:px-8 py-4 md:py-5 flex items-center justify-between sticky top-0 z-10">
       {/* Left */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 md:gap-4">
+        {/* Toggle Sidebar Button for Mobile */}
+        <button
+          onClick={toggleSidebar}
+          title="Open Menu"
+          className="p-2 md:p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition lg:hidden"
+        >
+          <FaBars size={16} />
+        </button>
+
         <button
           onClick={() => navigate(-1)}
           title="Go Back"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
+          className="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
         >
           <FaArrowLeft size={13} />
           <span className="hidden md:inline">Back</span>
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Admin Panel</h2>
-          <p className="text-gray-500 text-sm">
+          <h2 className="text-lg md:text-2xl font-bold text-gray-800 leading-tight">Admin Panel</h2>
+          <p className="text-gray-500 text-xs md:text-sm">
             Welcome back, {user?.name || "Admin"} 👋
           </p>
         </div>

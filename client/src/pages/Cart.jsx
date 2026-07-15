@@ -14,6 +14,7 @@ function Cart() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutSuccessOrder, setCheckoutSuccessOrder] = useState(null);
   const [checkoutError, setCheckoutError] = useState(null);
+  const [tempQuantities, setTempQuantities] = useState({});
 
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -69,10 +70,28 @@ function Cart() {
     try {
       setIsCheckoutLoading(true);
       setCheckoutError(null);
+
+      // Check if there are any temp quantities that haven't been saved yet
+      const pendingItemIds = Object.keys(tempQuantities);
+      if (pendingItemIds.length > 0) {
+        for (const itemId of pendingItemIds) {
+          const item = cartItems.find((i) => i.id === parseInt(itemId, 10));
+          if (item) {
+            const rawVal = tempQuantities[itemId];
+            let val = parseInt(rawVal, 10);
+            if (isNaN(val) || val < 1) val = 1;
+            const maxStock = item.stock || 999;
+            const finalVal = Math.min(val, maxStock);
+            await updateQuantity(item.productId, finalVal);
+          }
+        }
+        setTempQuantities({});
+      }
+
       const res = await orderService.checkout(selectedSlotId, "CASH");
       if (res.success) {
-        setCheckoutSuccessOrder(res.data);
-        await fetchCart();
+        clearCart();
+        navigate("/dashboard/orders");
       } else {
         setCheckoutError(res.message || "Failed to place order");
       }
@@ -139,6 +158,23 @@ function Cart() {
     );
   }
 
+  const getDynamicQty = (item) => {
+    const tempVal = tempQuantities[item.id];
+    if (tempVal === undefined) return item.quantity;
+    if (tempVal === "") return 0;
+    const val = parseInt(tempVal, 10);
+    return isNaN(val) ? 0 : val;
+  };
+
+  const getDynamicItemTotal = (item) => {
+    const price = parseFloat(item.price || 0);
+    return price * getDynamicQty(item);
+  };
+
+  const getDynamicCartTotal = () => {
+    return cartItems.reduce((sum, item) => sum + getDynamicItemTotal(item), 0);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
@@ -169,7 +205,7 @@ function Cart() {
           <div className="flex-1 space-y-4">
             {cartItems.map((item) => {
               const price = parseFloat(item.price || 0);
-              const itemTotal = price * item.quantity;
+              const itemTotal = getDynamicItemTotal(item);
 
               return (
                 <div
@@ -189,27 +225,50 @@ function Cart() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-gray-800 truncate">{item.name}</h3>
                     <p className="text-xs text-green-600 font-medium">{item.unit}</p>
-                    <p className="text-green-700 font-semibold mt-1">
-                      ₹{price.toFixed(2)} × {item.quantity} = <span className="text-gray-800">₹{itemTotal.toFixed(2)}</span>
-                    </p>
-                  </div>
+                    <div className="flex items-center gap-2 text-green-700 font-semibold mt-1.5 flex-wrap">
+                      <span>₹{price.toFixed(2)}</span>
+                      <span className="text-gray-400">×</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={item.stock || 999}
+                        value={tempQuantities[item.id] !== undefined ? tempQuantities[item.id] : item.quantity}
+                        onFocus={(e) => {
+                          e.target.select();
+                          setTempQuantities((prev) => ({ ...prev, [item.id]: item.quantity.toString() }));
+                        }}
+                        onChange={(e) => {
+                          const rawVal = e.target.value;
+                          setTempQuantities((prev) => ({ ...prev, [item.id]: rawVal }));
+                        }}
+                        onBlur={() => {
+                          const rawVal = tempQuantities[item.id];
+                          if (rawVal === undefined) return;
 
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      className="w-8 h-8 rounded-full border-2 border-green-200 flex items-center justify-center hover:bg-green-50 transition text-green-700 font-bold"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-8 text-center font-bold text-gray-800">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      disabled={item.quantity >= (item.stock || 99)}
-                      className="w-8 h-8 rounded-full border-2 border-green-200 flex items-center justify-center hover:bg-green-50 transition text-green-700 font-bold disabled:opacity-40"
-                    >
-                      <Plus size={14} />
-                    </button>
+                          let val = parseInt(rawVal, 10);
+                          if (isNaN(val) || val < 1) {
+                            val = 1;
+                          }
+                          const maxStock = item.stock || 999;
+                          const finalVal = Math.min(val, maxStock);
+                          updateQuantity(item.productId, finalVal);
+
+                          setTempQuantities((prev) => {
+                            const copy = { ...prev };
+                            delete copy[item.id];
+                            return copy;
+                          });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
+                        className="w-16 h-8 text-center border-2 border-green-200 rounded-xl font-bold text-gray-800 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors"
+                      />
+                      <span className="text-gray-400">=</span>
+                      <span className="text-gray-800">₹{itemTotal.toFixed(2)}</span>
+                    </div>
                   </div>
 
                   {/* Remove */}
@@ -230,22 +289,26 @@ function Cart() {
               <h2 className="text-xl font-bold text-gray-800 mb-5">Order Summary</h2>
 
               <div className="space-y-3 text-sm">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between text-gray-600">
-                    <span className="truncate max-w-[160px]">
-                      {item.name} × {item.quantity}
-                    </span>
-                    <span className="font-medium shrink-0 ml-2">
-                      ₹{(parseFloat(item.price || 0) * item.quantity).toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                {cartItems.map((item) => {
+                  const qty = getDynamicQty(item);
+                  const total = getDynamicItemTotal(item);
+                  return (
+                    <div key={item.id} className="flex justify-between text-gray-600">
+                      <span className="truncate max-w-[160px]">
+                        {item.name} × {qty}
+                      </span>
+                      <span className="font-medium shrink-0 ml-2">
+                        ₹{total.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="border-t border-gray-100 mt-4 pt-4">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-green-700">₹{cartTotal.toFixed(2)}</span>
+                  <span className="text-green-700">₹{getDynamicCartTotal().toFixed(2)}</span>
                 </div>
               </div>
 

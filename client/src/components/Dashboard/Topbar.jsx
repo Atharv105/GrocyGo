@@ -1,9 +1,9 @@
 import { useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import { FaBell, FaSignOutAlt, FaUserCircle, FaArrowLeft } from "react-icons/fa";
+import { FaBell, FaSignOutAlt, FaUserCircle, FaArrowLeft, FaBars } from "react-icons/fa";
 
-function Topbar() {
+function Topbar({ toggleSidebar }) {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -28,18 +28,27 @@ function Topbar() {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between shadow-sm">
+    <header className="h-16 bg-white border-b border-gray-200 px-4 md:px-8 flex items-center justify-between shadow-sm">
       {/* Left — Back button + welcome */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* Toggle Sidebar Button for Mobile */}
+        <button
+          onClick={toggleSidebar}
+          title="Open Menu"
+          className="p-2 md:p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition lg:hidden"
+        >
+          <FaBars size={16} />
+        </button>
+
         <button
           onClick={() => navigate(-1)}
           title="Go Back"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
+          className="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
         >
           <FaArrowLeft size={13} />
           <span className="hidden md:inline">Back</span>
         </button>
-        <div className="text-gray-500 text-sm font-medium">
+        <div className="text-gray-500 text-xs md:text-sm font-medium">
           Welcome back, <span className="text-green-700 font-bold">{user?.name?.split(" ")[0] || "Customer"}</span> 👋
         </div>
       </div>
