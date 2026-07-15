@@ -2,11 +2,12 @@ const orderService = require("../services/orderService");
 
 const checkout = async (req, res, next) => {
   try {
-    const { slotId } = req.body;
+    const { slotId, paymentMethod } = req.body;
 
     const order = await orderService.checkout(
       req.user.id,
-      slotId
+      slotId,
+      paymentMethod
     );
 
     res.status(201).json({
@@ -64,13 +65,13 @@ const cancelOrder = async (req, res, next) => {
   }
 };
 
-const getAllOrdersAdmin = async (req, res, next) => {
+const getAllOrders = async (req, res, next) => {
   try {
-    const orders = await orderService.getAllOrdersAdmin();
+    const orders = await orderService.getAllOrders();
 
     res.status(200).json({
       success: true,
-      message: "All orders retrieved successfully",
+      message: "Orders fetched successfully",
       data: orders,
     });
   } catch (error) {
@@ -78,9 +79,11 @@ const getAllOrdersAdmin = async (req, res, next) => {
   }
 };
 
-const getOrderByIdAdmin = async (req, res, next) => {
+const getAdminOrderById = async (req, res, next) => {
   try {
-    const order = await orderService.getOrderByIdAdmin(req.params.id);
+    const order = await orderService.getAdminOrderById(
+      req.params.id
+    );
 
     res.status(200).json({
       success: true,
@@ -94,7 +97,7 @@ const getOrderByIdAdmin = async (req, res, next) => {
 
 const updateOrderStatus = async (req, res, next) => {
   try {
-    const order = await orderService.updateOrderStatusAdmin(
+    const order = await orderService.updateOrderStatus(
       req.params.id,
       req.body.status
     );
@@ -109,30 +112,12 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-const updateOrderPaymentStatus = async (req, res, next) => {
-  try {
-    const order = await orderService.updateOrderPaymentStatusAdmin(
-      req.params.id,
-      req.body.paymentStatus
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "Order payment status updated successfully",
-      data: order,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
   cancelOrder,
-  getAllOrdersAdmin,
-  getOrderByIdAdmin,
+  getAllOrders,
+  getAdminOrderById,
   updateOrderStatus,
-  updateOrderPaymentStatus,
 };

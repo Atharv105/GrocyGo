@@ -35,6 +35,14 @@ const Order = sequelize.define(
       defaultValue: "PENDING",
     },
 
+    paymentMethod: {
+      type: DataTypes.ENUM(
+        "CASH"
+      ),
+      allowNull: false,
+      defaultValue: "CASH",
+    },
+
     slotId: {
       type: DataTypes.INTEGER,
       allowNull: false,

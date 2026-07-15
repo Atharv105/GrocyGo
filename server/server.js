@@ -6,7 +6,7 @@ const db = require("./models");
 const PORT = process.env.PORT || 5000;
 
 db.sequelize
-  .sync()
+  .sync({ alter: true })
   .then(() => {
     console.log("✅ Database Connected");
 
