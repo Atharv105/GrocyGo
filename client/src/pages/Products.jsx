@@ -96,7 +96,9 @@ function Products() {
   const fetchCategories = async () => {
     try {
       const res = await getAllCategories();
-      if (res.success) setCategories(res.data);
+      if (res.success) {
+        setCategories(res.data.filter(c => c.isActive));
+      }
     } catch (err) {
       console.error("Error fetching categories:", err);
     }

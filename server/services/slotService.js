@@ -196,12 +196,20 @@ const getAvailableSlots = async (date) => {
     availableCapacity: slot.maxCapacity - slot.bookedCount,
   }));
 };
-
-
+  
+const updateSlot = async (id, slotData) => {
+  const slot = await Slot.findByPk(id);
+  if (!slot) {
+    throw new AppError("Slot not found", 404);
+  }
+  await slot.update(slotData);
+  return slot;
+};
 
 module.exports = {
     createSlot,
     getAllSlots,
     generateSlots,
     getAvailableSlots,
+    updateSlot,
 };

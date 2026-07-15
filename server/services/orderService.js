@@ -320,6 +320,7 @@ const getAllOrders = async () => {
   const orders = await Order.findAll({
     attributes: [
       "id",
+      "userId",
       "totalAmount",
       "status",
       "paymentStatus",

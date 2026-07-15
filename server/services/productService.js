@@ -38,9 +38,12 @@ const getAllProducts = async (query) => {
     order = "DESC",
   } = query;
 
-  const where = {
-    isActive: true,
-  };
+  const where = {};
+  if (query.includeInactive === "true") {
+    // Show all including inactive
+  } else {
+    where.isActive = true;
+  }
 
   // Search by product name
   if (search) {
@@ -92,10 +95,6 @@ const getAllProducts = async (query) => {
 
 const getProductById = async(id) => {
     const product = await Product.findByPk(id,{
-        where : {
-            id,
-            isActive : true,
-        },
         include : [
             {
                 model: Category,
@@ -113,7 +112,7 @@ const getProductById = async(id) => {
 const updateProduct = async (id, productData) => {
   const product = await Product.findByPk(id);
 
-  if (!product || !product.isActive) {
+  if (!product) {
     throw new AppError("Product not found", 404);
   }
 
@@ -151,7 +150,7 @@ const updateProduct = async (id, productData) => {
 const deleteProduct = async(id) => {
     const product = await Product.findByPk(id);
 
-    if(!product || !product.isActive){
+    if(!product){
         throw new AppError("Product not found",404);
     }
     await product.update({

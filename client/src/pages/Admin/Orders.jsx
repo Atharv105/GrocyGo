@@ -89,6 +89,21 @@ function AdminOrders() {
 
   // Handle Order Status Update
   const handleStatusChange = async (orderId, newStatus) => {
+    // Prevent completed -> pending transition
+    const currentOrder = orders.find(o => o.id === orderId);
+    if (currentOrder && currentOrder.status === "COMPLETED" && newStatus === "PENDING") {
+      alert("Cannot change status back to PENDING once it is COMPLETED.");
+      return;
+    }
+
+    // Confirmation popup for marking as COMPLETED
+    if (newStatus === "COMPLETED") {
+      const confirmComplete = window.confirm("Are you sure you want to mark this order as COMPLETED?");
+      if (!confirmComplete) {
+        return;
+      }
+    }
+
     try {
       setStatusUpdateLoading(prev => ({ ...prev, [orderId]: true }));
       const res = await orderService.updateOrderStatus(orderId, newStatus);
@@ -206,7 +221,7 @@ function AdminOrders() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-400">Total Orders</p>
@@ -234,6 +249,16 @@ function AdminOrders() {
           </div>
           <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">
             <CheckCircle size={24} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-400">Cancelled Orders</p>
+            <h3 className="text-3xl font-extrabold text-red-600 mt-1">{stats.cancelled}</h3>
+          </div>
+          <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600">
+            <Ban size={24} />
           </div>
         </div>
 
@@ -331,15 +356,17 @@ function AdminOrders() {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        disabled={statusUpdateLoading[order.id]}
+                        disabled={statusUpdateLoading[order.id] || order.status === "CANCELLED"}
                         className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${getStatusSelectStyle(
                           order.status
                         )}`}
                       >
-                        <option value="PENDING">PENDING</option>
+                        <option value="PENDING" disabled={order.status === "COMPLETED"}>PENDING</option>
                         <option value="CONFIRMED">CONFIRMED</option>
                         <option value="COMPLETED">COMPLETED</option>
-                        <option value="CANCELLED">CANCELLED</option>
+                        {order.status === "CANCELLED" && (
+                          <option value="CANCELLED">CANCELLED</option>
+                        )}
                       </select>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -494,14 +521,17 @@ function AdminOrders() {
                           <select
                             value={orderDetails.status}
                             onChange={(e) => handleStatusChange(orderDetails.id, e.target.value)}
+                            disabled={statusUpdateLoading[orderDetails.id] || orderDetails.status === "CANCELLED"}
                             className={`w-full text-sm font-bold rounded-xl p-2.5 border outline-none cursor-pointer focus:ring-2 transition ${getStatusSelectStyle(
                               orderDetails.status
                             )}`}
                           >
-                            <option value="PENDING">PENDING</option>
+                            <option value="PENDING" disabled={orderDetails.status === "COMPLETED"}>PENDING</option>
                             <option value="CONFIRMED">CONFIRMED</option>
                             <option value="COMPLETED">COMPLETED</option>
-                            <option value="CANCELLED">CANCELLED</option>
+                            {orderDetails.status === "CANCELLED" && (
+                              <option value="CANCELLED">CANCELLED</option>
+                            )}
                           </select>
                         </div>
 

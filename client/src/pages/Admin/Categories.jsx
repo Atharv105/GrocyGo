@@ -14,7 +14,7 @@ function Categories() {
 
   const fetchCategories = async () => {
     try {
-      const res = await API.get("/categories");
+      const res = await API.get("/categories?includeInactive=true");
       if (res.data.success) {
         setCategories(res.data.data);
       }
