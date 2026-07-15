@@ -328,7 +328,7 @@ const getAllOrders = async () => {
     include: [
       {
         model: User,
-        attributes: ["id", "name", "phone"],
+        attributes: ["id", "name", "mobile"],
       },
       {
         model: Slot,
@@ -480,4 +480,5 @@ module.exports = {
   cancelOrder,
   getAdminOrderById,
   updateOrderStatus,
+  updatePaymentStatus,
 };

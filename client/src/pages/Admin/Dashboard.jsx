@@ -18,6 +18,10 @@ function Dashboard() {
   const [productCount, setProductCount] = useState(0);
   const [categoryCount, setCategoryCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
+  const [customerCount, setCustomerCount] = useState(0);
+  const [ordersToday, setOrdersToday] = useState(0);
+  const [revenueToday, setRevenueToday] = useState(0);
+  const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +43,30 @@ function Dashboard() {
             (p) => p.stock <= 5
           );
           setLowStockCount(lowStockItems.length);
+        }
+
+        const orderRes = await API.get("/orders/admin/orders");
+        if (orderRes.data.success) {
+          const orders = orderRes.data.data || [];
+          
+          // Calculate today's date range (in local time)
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          
+          const todayOrders = orders.filter(o => new Date(o.createdAt) >= startOfToday);
+          setOrdersToday(todayOrders.length);
+          
+          const todayRevenue = todayOrders
+            .filter(o => o.paymentStatus === "PAID")
+            .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+          setRevenueToday(todayRevenue);
+          
+          // Count unique users who have placed orders
+          const uniqueUserIds = new Set(orders.map(o => o.userId).filter(Boolean));
+          setCustomerCount(uniqueUserIds.size);
+          
+          // Get top 5 recent orders
+          setRecentOrders(orders.slice(0, 5));
         }
       } catch (err) {
         console.error("Error loading dashboard stats:", err);
@@ -84,21 +112,21 @@ function Dashboard() {
 
         <StatCard
           title="Customers"
-          value="1,540"
+          value={loading ? "..." : customerCount.toString()}
           icon={<FaUsers />}
           color="bg-blue-600"
         />
 
         <StatCard
           title="Orders Today"
-          value="82"
+          value={loading ? "..." : ordersToday.toString()}
           icon={<FaClipboardList />}
           color="bg-purple-600"
         />
 
         <StatCard
           title="Revenue Today"
-          value="₹18,450"
+          value={loading ? "..." : "₹" + revenueToday.toLocaleString("en-IN")}
           icon={<FaMoneyBillWave />}
           color="bg-emerald-600"
         />
@@ -108,7 +136,7 @@ function Dashboard() {
         </div>
         
         <div className="grid lg:grid-cols-2 gap-8 mt-8 col-span-1 md:col-span-2 xl:col-span-3">
-          <RecentOrders />
+          <RecentOrders orders={recentOrders} />
           <LowStockProducts />
         </div>
       </div>
