@@ -1,9 +1,10 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, ShoppingBag, CheckCircle, AlertTriangle } from "lucide-react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import * as orderService from "../services/orderService";
+import * as slotService from "../services/slotService";
 
 function Cart() {
   const navigate = useNavigate();
@@ -14,11 +15,61 @@ function Cart() {
   const [checkoutSuccessOrder, setCheckoutSuccessOrder] = useState(null);
   const [checkoutError, setCheckoutError] = useState(null);
 
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [slotsError, setSlotsError] = useState(null);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (!isLoggedIn) return;
+      try {
+        setSlotsLoading(true);
+        setSlotsError(null);
+        const res = await slotService.getAvailableSlots(selectedDate);
+        if (res.success) {
+          setAvailableSlots(res.data || []);
+          setSelectedSlotId(null);
+        } else {
+          setSlotsError(res.message || "Failed to load slots");
+          setAvailableSlots([]);
+        }
+      } catch (err) {
+        console.error("Error loading slots:", err);
+        setSlotsError(
+          err.response?.data?.message || "Could not load pickup slots."
+        );
+        setAvailableSlots([]);
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+
+    fetchSlots();
+  }, [selectedDate, isLoggedIn]);
+
+  const formatTime12h = (timeStr) => {
+    if (!timeStr) return "";
+    const [hour, minute] = timeStr.split(":");
+    let hr = parseInt(hour, 10);
+    const ampm = hr >= 12 ? "PM" : "AM";
+    hr = hr % 12;
+    hr = hr ? hr : 12;
+    return `${hr.toString().padStart(2, "0")}:${minute} ${ampm}`;
+  };
+
   const handleCheckout = async () => {
+    if (!selectedSlotId) {
+      setCheckoutError("Please select a pickup slot before placing your order.");
+      return;
+    }
     try {
       setIsCheckoutLoading(true);
       setCheckoutError(null);
-      const res = await orderService.checkout();
+      const res = await orderService.checkout(selectedSlotId, "CASH");
       if (res.success) {
         setCheckoutSuccessOrder(res.data);
         await fetchCart();
@@ -198,6 +249,69 @@ function Cart() {
                 </div>
               </div>
 
+              {/* Pickup Slot Selection */}
+              <div className="border-t border-gray-100 mt-5 pt-5 space-y-4">
+                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                  <span className="text-orange-500">⏰</span> Select Pickup Slot
+                </h3>
+                
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1 font-medium">Pickup Date</label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-green-500 outline-none"
+                  />
+                </div>
+
+                {slotsLoading ? (
+                  <div className="flex items-center justify-center py-4 gap-2">
+                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs text-green-700">Loading slots...</span>
+                  </div>
+                ) : slotsError ? (
+                  <p className="text-xs text-red-500">{slotsError}</p>
+                ) : availableSlots.length === 0 ? (
+                  <p className="text-xs text-orange-500 bg-orange-50 p-2.5 rounded-xl border border-orange-100">
+                    No slots available for this date.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-400 block font-medium">Available Times</label>
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1">
+                      {availableSlots.map((slot) => {
+                        const isSelected = selectedSlotId === slot.id;
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            onClick={() => setSelectedSlotId(slot.id)}
+                            className={`w-full text-left p-2.5 rounded-xl border text-xs transition-all flex items-center justify-between ${
+                              isSelected
+                                ? "border-green-600 bg-green-50 text-green-800 font-bold shadow-sm"
+                                : "border-gray-200 hover:border-green-400 hover:bg-green-50/30 text-gray-700"
+                            }`}
+                          >
+                            <span>
+                              {formatTime12h(slot.startTime)} - {formatTime12h(slot.endTime)}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                              slot.availableCapacity <= 5
+                                ? "bg-orange-50 text-orange-600 font-medium"
+                                : "bg-green-50 text-green-600"
+                            }`}>
+                              {slot.availableCapacity} left
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {checkoutError && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-2 animate-shake">
                   <AlertTriangle size={18} className="shrink-0 mt-0.5" />
@@ -208,7 +322,7 @@ function Cart() {
               <button
                 className="w-full mt-6 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 shadow-md shadow-green-200"
                 onClick={handleCheckout}
-                disabled={isCheckoutLoading}
+                disabled={isCheckoutLoading || !selectedSlotId}
               >
                 {isCheckoutLoading ? (
                   <>

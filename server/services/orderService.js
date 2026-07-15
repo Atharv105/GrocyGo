@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-const { sequelize, Cart, CartItem, Product, Order, OrderItem, User } = require("../models");
-=======
-=======
->>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
 const {
   sequelize,
   User,
@@ -14,10 +8,6 @@ const {
   OrderItem,
   Slot,
 } = require("../models");
-<<<<<<< HEAD
->>>>>>> 1d55b7275f3ec53e208241c56e1f27bb584a5d40
-=======
->>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
 const AppError = require("../utils/AppError");
 
 
@@ -338,7 +328,7 @@ const getAllOrders = async () => {
     include: [
       {
         model: User,
-        attributes: ["id", "name", "phone"],
+        attributes: ["id", "name", "mobile"],
       },
       {
         model: Slot,
@@ -483,22 +473,12 @@ const updatePaymentStatus = async (orderId) => {
 
 
 module.exports = {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    checkout,
-    getMyOrders,
-    getOrderById,
-    cancelOrder,
-    getAllOrdersAdmin,
-    getOrderByIdAdmin,
-    updateOrderStatusAdmin,
-    updateOrderPaymentStatusAdmin,
-=======
-=======
->>>>>>> a89405d1815ccd01b892c1162b749a17b4d01e1e
   checkout,
   getMyOrders,
   getAllOrders,
   getOrderById,
   cancelOrder,
+  getAdminOrderById,
+  updateOrderStatus,
+  updatePaymentStatus,
 };
