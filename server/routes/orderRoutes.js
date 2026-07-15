@@ -4,27 +4,41 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
-const {
-  checkout,
-  getMyOrders,
-  getOrderById,
-  cancelOrder,
-  getAllOrdersAdmin,
-  getOrderByIdAdmin,
-  updateOrderStatus,
-  updateOrderPaymentStatus,
+const { checkout,
+    getMyOrders,
+    getOrderById,
+    cancelOrder,
+    getAllOrders,
+    getAdminOrderById,
+    updateOrderStatus
 } = require("../controllers/orderController");
 
-// Admin Routes (Placed above user parameters routes to prevent matching collision)
-router.get("/admin/all-orders", authMiddleware, adminMiddleware, getAllOrdersAdmin);
-router.get("/admin/:id", authMiddleware, adminMiddleware, getOrderByIdAdmin);
-router.put("/:id/status", authMiddleware, adminMiddleware, updateOrderStatus);
-router.put("/:id/payment", authMiddleware, adminMiddleware, updateOrderPaymentStatus);
-
-// User Routes
+// CUSTOMER ROUTES
 router.post("/checkout", authMiddleware, checkout);
 router.get("/my-orders", authMiddleware, getMyOrders);
 router.get("/:id", authMiddleware, getOrderById);
 router.put("/:id/cancel", authMiddleware, cancelOrder);
+
+// ADMIN ROUTES
+router.get(
+    "/admin/orders",
+    authMiddleware,
+    adminMiddleware,
+    getAllOrders
+);
+
+router.get(
+    "/admin/orders/:id",
+    authMiddleware,
+    adminMiddleware,
+    getAdminOrderById
+);
+
+router.patch(
+  "/admin/orders/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  updateOrderStatus
+);
 
 module.exports = router;

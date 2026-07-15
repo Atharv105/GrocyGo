@@ -1,5 +1,6 @@
 const {
   sequelize,
+  User,
   Cart,
   CartItem,
   Product,
@@ -10,7 +11,7 @@ const {
 const AppError = require("../utils/AppError");
 
 
-const checkout = async (userId, slotId) => {
+const checkout = async (userId, slotId, paymentMethod = "CASH") => {
   // Start transaction
   const transaction = await sequelize.transaction();
 
@@ -19,6 +20,13 @@ const checkout = async (userId, slotId) => {
 
     if (!slotId) {
       throw new AppError("Slot is required", 400);
+    }
+
+    if (paymentMethod !== "CASH") {
+      throw new AppError(
+        "Only Cash On Pickup is available",
+        400
+      );
     }
 
     const slot = await Slot.findOne({
@@ -105,6 +113,7 @@ const checkout = async (userId, slotId) => {
         userId,
         slotId,
         totalAmount,
+        paymentMethod,
         status: "PENDING",
         paymentStatus: "PENDING",
       },
@@ -307,12 +316,23 @@ const cancelOrder = async (userId, orderId) => {
 };
 
 
-const getAllOrdersAdmin = async () => {
+const getAllOrders = async () => {
   const orders = await Order.findAll({
+    attributes: [
+      "id",
+      "totalAmount",
+      "status",
+      "paymentStatus",
+      "createdAt",
+    ],
     include: [
       {
         model: User,
-        attributes: ["id", "name", "mobile"],
+        attributes: ["id", "name", "phone"],
+      },
+      {
+        model: Slot,
+        attributes: ["date", "startTime", "endTime"],
       },
     ],
     order: [["createdAt", "DESC"]],
@@ -321,22 +341,41 @@ const getAllOrdersAdmin = async () => {
   return orders;
 };
 
-const getOrderByIdAdmin = async (orderId) => {
-  const order = await Order.findOne({
-    where: {
-      id: orderId,
-    },
+const getAdminOrderById = async (orderId) => {
+  const order = await Order.findByPk(orderId, {
+    attributes: [
+      "id",
+      "totalAmount",
+      "status",
+      "paymentStatus",
+      "createdAt",
+    ],
     include: [
       {
         model: User,
         attributes: ["id", "name", "mobile"],
       },
       {
+        model: Slot,
+        attributes: ["date", "startTime", "endTime"],
+      },
+      {
         model: OrderItem,
+        attributes: [
+          "id",
+          "quantity",
+          "price",
+          "subtotal",
+        ],
         include: [
           {
             model: Product,
-            attributes: ["id", "name", "image", "unit", "price"],
+            attributes: [
+              "id",
+              "name",
+              "image",
+              "unit",
+            ],
           },
         ],
       },
@@ -350,92 +389,95 @@ const getOrderByIdAdmin = async (orderId) => {
   return order;
 };
 
-const updateOrderStatusAdmin = async (orderId, status) => {
-  const transaction = await sequelize.transaction();
+const updateOrderStatus = async (orderId, status) => {
+  const validStatuses = [
+    "PENDING",
+    "CONFIRMED",
+    "COMPLETED",
+  ];
 
-  try {
-    const order = await Order.findByPk(orderId, {
-      include: [
-        {
-          model: OrderItem,
-        },
-      ],
-      transaction,
-    });
-
-    if (!order) {
-      throw new AppError("Order not found", 404);
-    }
-
-    const validStatuses = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
-    if (!validStatuses.includes(status)) {
-      throw new AppError("Invalid order status", 400);
-    }
-
-    // Handle stock restoration if order is cancelled
-    if (status === "CANCELLED" && order.status !== "CANCELLED") {
-      for (const item of order.OrderItems) {
-        const product = await Product.findByPk(item.productId, {
-          transaction,
-        });
-
-        if (product) {
-          product.stock += item.quantity;
-          await product.save({ transaction });
-        }
-      }
-    }
-
-    // Handle stock re-deduction if status goes back to active from cancelled
-    if (order.status === "CANCELLED" && status !== "CANCELLED") {
-      for (const item of order.OrderItems) {
-        const product = await Product.findByPk(item.productId, {
-          transaction,
-        });
-
-        if (product) {
-          if (product.stock < item.quantity) {
-            throw new AppError(`Insufficient stock for "${product.name}" to reactivate order`, 400);
-          }
-          product.stock -= item.quantity;
-          await product.save({ transaction });
-        }
-      }
-    }
-
-    order.status = status;
-    await order.save({ transaction });
-
-    await transaction.commit();
-    return order;
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
+  if (!validStatuses.includes(status)) {
+    throw new AppError("Invalid order status", 400);
   }
-};
 
-const updateOrderPaymentStatusAdmin = async (orderId, paymentStatus) => {
   const order = await Order.findByPk(orderId);
 
   if (!order) {
     throw new AppError("Order not found", 404);
   }
 
-  const validPaymentStatuses = ["PENDING", "PAID", "FAILED"];
-  if (!validPaymentStatuses.includes(paymentStatus)) {
-    throw new AppError("Invalid payment status", 400);
+  // Prevent updates after completion/cancellation
+  if (order.status === "COMPLETED") {
+    throw new AppError(
+      "Completed orders cannot be updated",
+      400
+    );
   }
 
-  order.paymentStatus = paymentStatus;
+  if (order.status === "CANCELLED") {
+    throw new AppError(
+      "Cancelled orders cannot be updated",
+      400
+    );
+  }
+
+  // Allowed transitions
+  if (
+    order.status === "PENDING" &&
+    status !== "CONFIRMED"
+  ) {
+    throw new AppError(
+      "Pending orders can only be confirmed",
+      400
+    );
+  }
+
+  if (
+    order.status === "CONFIRMED" &&
+    status !== "COMPLETED"
+  ) {
+    throw new AppError(
+      "Confirmed orders can only be completed",
+      400
+    );
+  }
+
+  order.status = status;
+
   await order.save();
 
   return order;
 };
 
+const updatePaymentStatus = async (orderId) => {
+
+  const order = await Order.findByPk(orderId);
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  if (order.status !== "CONFIRMED") {
+    throw new AppError(
+      "Payment can only be marked after the order is confirmed",
+      400
+    );
+  }
+
+  order.paymentStatus = "PAID";
+
+  await order.save();
+
+  return order;
+}
+
 
 module.exports = {
   checkout,
   getMyOrders,
+  getAllOrders,
   getOrderById,
   cancelOrder,
+  getAdminOrderById,
+  updateOrderStatus,
 };
