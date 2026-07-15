@@ -2,11 +2,12 @@ const orderService = require("../services/orderService");
 
 const checkout = async (req, res, next) => {
   try {
-    const { slotId } = req.body;
+    const { slotId, paymentMethod } = req.body;
 
     const order = await orderService.checkout(
       req.user.id,
-      slotId
+      slotId,
+      paymentMethod
     );
 
     res.status(201).json({
@@ -64,9 +65,59 @@ const cancelOrder = async (req, res, next) => {
   }
 };
 
+const getAllOrders = async (req, res, next) => {
+  try {
+    const orders = await orderService.getAllOrders();
+
+    res.status(200).json({
+      success: true,
+      message: "Orders fetched successfully",
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAdminOrderById = async (req, res, next) => {
+  try {
+    const order = await orderService.getAdminOrderById(
+      req.params.id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order fetched successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateOrderStatus = async (req, res, next) => {
+  try {
+    const order = await orderService.updateOrderStatus(
+      req.params.id,
+      req.body.status
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
   cancelOrder,
+  getAllOrders,
+  getAdminOrderById,
+  updateOrderStatus,
 };
