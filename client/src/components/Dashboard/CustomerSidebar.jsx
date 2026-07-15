@@ -7,6 +7,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaUserCircle,
+  FaTachometerAlt,
 } from "react-icons/fa";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
@@ -17,7 +18,8 @@ function CustomerSidebar() {
   const { user, logout } = useContext(AuthContext);
 
   const menus = [
-    { title: "Dashboard", icon: <FaHome />, path: "/dashboard" },
+    { title: "Store Home", icon: <FaHome />, path: "/" },
+    { title: "Dashboard", icon: <FaTachometerAlt />, path: "/dashboard" },
     { title: "My Orders", icon: <FaClipboardList />, path: "/dashboard/orders" },
     { title: "Wishlist", icon: <FaHeart />, path: "/dashboard/wishlist" },
     { title: "Pickup Slots", icon: <FaClock />, path: "/dashboard/slots" },

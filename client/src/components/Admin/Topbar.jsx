@@ -1,11 +1,31 @@
-import { FaBell, FaUserCircle, FaSearch, FaArrowLeft } from "react-icons/fa";
-import { useContext } from "react";
+import { FaBell, FaUserCircle, FaSearch, FaArrowLeft, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 function Topbar() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="bg-white shadow-sm border-b px-8 py-5 flex items-center justify-between sticky top-0 z-10">
@@ -47,15 +67,57 @@ function Topbar() {
           </span>
         </button>
 
-        {/* Admin Profile */}
-        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-          <FaUserCircle size={40} className="text-green-700" />
-          <div>
-            <p className="font-semibold text-gray-800 text-sm leading-none">
-              {user?.name || "Admin"}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Administrator</p>
-          </div>
+        {/* Admin Profile Dropdown */}
+        <div className="relative pl-4 border-l border-gray-200" ref={dropdownRef}>
+          <button
+            onClick={() => setOpenDropdown(!openDropdown)}
+            className="flex items-center gap-3 hover:bg-gray-50 p-1.5 rounded-xl transition"
+          >
+            <FaUserCircle size={40} className="text-green-700" />
+            <div className="text-left">
+              <p className="font-semibold text-gray-800 text-sm leading-none">
+                {user?.name || "Admin"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1 leading-none">Administrator</p>
+            </div>
+          </button>
+
+          {openDropdown && (
+            <div className="absolute right-0 mt-3 w-52 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+              <Link
+                to="/"
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 transition-colors"
+                onClick={() => setOpenDropdown(false)}
+              >
+                Store Home
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 transition-colors"
+                onClick={() => setOpenDropdown(false)}
+              >
+                My Profile
+              </Link>
+              <Link
+                to="/admin/settings"
+                className="flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 transition-colors"
+                onClick={() => setOpenDropdown(false)}
+              >
+                Settings
+              </Link>
+              <hr className="my-1 border-gray-100" />
+              <button
+                onClick={() => {
+                  setOpenDropdown(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors text-left"
+              >
+                <FaSignOutAlt size={14} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

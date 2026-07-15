@@ -9,6 +9,7 @@ import {
   FaUser,
   FaTachometerAlt,
   FaSignOutAlt,
+  FaShoppingBag,
 } from "react-icons/fa";
 
 function Navbar() {
@@ -198,6 +199,22 @@ function Navbar() {
         overflow-hidden
         "
                     >
+                      <Link
+                        to="/products"
+                        className="
+          flex
+          items-center
+          gap-3
+          px-5
+          py-4
+          hover:bg-green-50
+          transition
+          "
+                      >
+                        <FaShoppingBag className="text-green-700" />
+                        Shop
+                      </Link>
+
                       <Link
                         to="/profile"
                         className="
