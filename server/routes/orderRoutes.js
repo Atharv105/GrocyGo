@@ -10,7 +10,8 @@ const { checkout,
     cancelOrder,
     getAllOrders,
     getAdminOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    updatePaymentStatus
 } = require("../controllers/orderController");
 
 // CUSTOMER ROUTES
@@ -39,6 +40,13 @@ router.patch(
   authMiddleware,
   adminMiddleware,
   updateOrderStatus
+);
+
+router.patch(
+  "/admin/orders/:id/payment-status",
+  authMiddleware,
+  adminMiddleware,
+  updatePaymentStatus
 );
 
 module.exports = router;
