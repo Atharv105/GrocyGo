@@ -19,7 +19,7 @@ const getCloudinaryImages = async (req, res) => {
     }
 
     console.log("Fetching resources from Cloudinary API...");
-    // Fetch up to 500 resources in folder 'Grocery'
+    // Fetch up to 500 resources in Cloudinary
     const result = await cloudinary.api.resources({
       max_results: 500,
       type: "upload",
@@ -29,23 +29,31 @@ const getCloudinaryImages = async (req, res) => {
     const products = [];
 
     result.resources.forEach((resource) => {
-      const folder = resource.asset_folder || "";
-      
-      if (folder.startsWith("Grocery/Categories")) {
+      let folder = resource.asset_folder || resource.folder || "";
+      if (!folder && resource.public_id && resource.public_id.includes("/")) {
+        const parts = resource.public_id.split("/");
+        parts.pop();
+        folder = parts.join("/");
+      }
+
+      const folderLower = folder.toLowerCase();
+      const filenameVal = resource.display_name || resource.filename || resource.public_id.split("/").pop();
+
+      if (folderLower.includes("categories")) {
         categories.push({
           public_id: resource.public_id,
           url: resource.secure_url,
           folderPath: folder,
-          folderName: folder.split("/").pop(),
-          filename: resource.filename,
+          folderName: folder.split("/").pop() || "",
+          filename: filenameVal,
         });
-      } else if (folder.startsWith("Grocery/Products")) {
+      } else if (folderLower.includes("products")) {
         products.push({
           public_id: resource.public_id,
           url: resource.secure_url,
           folderPath: folder,
-          folderName: folder.split("/").pop(),
-          filename: resource.filename,
+          folderName: folder.split("/").pop() || "",
+          filename: filenameVal,
         });
       }
     });
