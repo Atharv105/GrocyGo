@@ -173,7 +173,7 @@ function AdminOrders() {
   // Statistics Calculations
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => o.status === "PENDING").length,
+    pending: orders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
     confirmed: orders.filter(o => o.status === "CONFIRMED").length,
     completed: orders.filter(o => o.status === "COMPLETED").length,
     cancelled: orders.filter(o => o.status === "CANCELLED").length,
