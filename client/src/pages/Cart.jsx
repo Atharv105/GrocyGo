@@ -81,7 +81,10 @@ function Cart() {
             let val = parseInt(rawVal, 10);
             if (isNaN(val) || val < 1) val = 1;
             const maxStock = item.stock || 999;
-            const finalVal = Math.min(val, maxStock);
+            let finalVal = val;
+            if (val > maxStock) {
+              finalVal = maxStock;
+            }
             await updateQuantity(item.productId, finalVal);
           }
         }
@@ -239,6 +242,13 @@ function Cart() {
                         }}
                         onChange={(e) => {
                           const rawVal = e.target.value;
+                          const val = parseInt(rawVal, 10);
+                          const maxStock = item.stock || 999;
+                          if (!isNaN(val) && val > maxStock) {
+                            setTempQuantities((prev) => ({ ...prev, [item.id]: maxStock.toString() }));
+                            updateQuantity(item.productId, maxStock);
+                            return;
+                          }
                           setTempQuantities((prev) => ({ ...prev, [item.id]: rawVal }));
                         }}
                         onBlur={() => {
@@ -250,7 +260,10 @@ function Cart() {
                             val = 1;
                           }
                           const maxStock = item.stock || 999;
-                          const finalVal = Math.min(val, maxStock);
+                          let finalVal = val;
+                          if (val > maxStock) {
+                            finalVal = maxStock;
+                          }
                           updateQuantity(item.productId, finalVal);
 
                           setTempQuantities((prev) => {
@@ -271,13 +284,22 @@ function Cart() {
                     </div>
                   </div>
 
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeFromCart(item.productId)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition shrink-0"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {/* Remove & Stock */}
+                  <div className="flex flex-col items-center gap-1 shrink-0 self-start">
+                    <button
+                      onClick={() => removeFromCart(item.productId)}
+                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <span className={`text-xs font-bold whitespace-nowrap border px-2 py-0.5 rounded-md ${
+                      item.stock < 10
+                        ? "text-red-600 bg-red-50 border-red-100"
+                        : "text-green-700 bg-green-50 border-green-100"
+                    }`}>
+                      Stock: {item.stock}
+                    </span>
+                  </div>
                 </div>
               );
             })}

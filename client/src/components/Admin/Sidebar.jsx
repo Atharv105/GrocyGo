@@ -20,11 +20,6 @@ function Sidebar({ isOpen, setIsOpen }) {
 
   const menus = [
     {
-      title: "Store Home",
-      icon: <FaHome />,
-      path: "/",
-    },
-    {
       title: "Dashboard",
       icon: <FaTachometerAlt />,
       path: "/admin",

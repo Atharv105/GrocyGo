@@ -46,12 +46,7 @@ const getCategoryById = async (id) => {
 
 // Update Category
 const updateCategory = async (id, categoryData) => {
-  const category = await Category.findOne({
-    where: {
-      id,
-      isActive: true,
-    },
-  });
+  const category = await Category.findByPk(id);
 
   if (!category) {
     throw new AppError("Category not found", 404);
@@ -72,39 +67,43 @@ const updateCategory = async (id, categoryData) => {
 
   await category.update(categoryData);
 
+  // Propagate isActive status changes to all associated products
+  if (categoryData.isActive !== undefined) {
+    const newStatus = categoryData.isActive === true || categoryData.isActive === "true";
+    await Product.update(
+      { isActive: newStatus },
+      {
+        where: {
+          categoryId: id,
+        },
+      }
+    );
+  }
+
   return category;
 };
 
 // Soft Delete Category
 const deleteCategory = async (id) => {
-  const category = await Category.findOne({
-    where: {
-      id,
-      isActive: true,
-    },
-  });
+  const category = await Category.findByPk(id);
 
   if (!category) {
     throw new AppError("Category not found", 404);
   }
 
-  const products = await Product.count({
-    where: {
-      categoryId: id,
-      isActive: true,
-    },
-  });
-
-  if (products > 0) {
-    throw new AppError(
-      "Cannot delete category because it contains active products.",
-      400
-    );
-  }
-
   await category.update({
     isActive: false,
   });
+
+  // Automatically deactivate all products in this category
+  await Product.update(
+    { isActive: false },
+    {
+      where: {
+        categoryId: id,
+      },
+    }
+  );
 };
 
 module.exports = {
