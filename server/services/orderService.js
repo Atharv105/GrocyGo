@@ -443,6 +443,13 @@ const updateOrderStatus = async (orderId, status) => {
     );
   }
 
+  if (status === "COMPLETED" && order.paymentStatus !== "PAID") {
+    throw new AppError(
+      "Cannot mark order as COMPLETED because it has not been PAID yet",
+      400
+    );
+  }
+
   order.status = status;
 
   await order.save();
@@ -450,7 +457,7 @@ const updateOrderStatus = async (orderId, status) => {
   return order;
 };
 
-const updatePaymentStatus = async (orderId) => {
+const updatePaymentStatus = async (orderId, paymentStatus) => {
 
   const order = await Order.findByPk(orderId);
 
@@ -458,14 +465,26 @@ const updatePaymentStatus = async (orderId) => {
     throw new AppError("Order not found", 404);
   }
 
-  if (order.status !== "CONFIRMED") {
+  if (order.status === "COMPLETED" && paymentStatus !== "PAID") {
+    throw new AppError(
+      "Cannot change payment status of a COMPLETED order to unpaid",
+      400
+    );
+  }
+
+  if (order.status !== "CONFIRMED" && order.status !== "COMPLETED") {
     throw new AppError(
       "Payment can only be marked after the order is confirmed",
       400
     );
   }
 
-  order.paymentStatus = "PAID";
+  const validPaymentStatuses = ["PENDING", "PAID", "FAILED"];
+  if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+    throw new AppError("Invalid payment status", 400);
+  }
+
+  order.paymentStatus = paymentStatus || "PAID";
 
   await order.save();
 

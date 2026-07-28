@@ -20,6 +20,16 @@ import {
 } from "lucide-react";
 import * as orderService from "../../services/orderService";
 
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return "";
+  const [hour, minute] = timeStr.split(":");
+  let hr = parseInt(hour, 10);
+  const ampm = hr >= 12 ? "PM" : "AM";
+  hr = hr % 12;
+  hr = hr ? hr : 12;
+  return `${hr.toString().padStart(2, "0")}:${minute} ${ampm}`;
+};
+
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,8 +99,17 @@ function AdminOrders() {
 
   // Handle Order Status Update
   const handleStatusChange = async (orderId, newStatus) => {
-    // Prevent completed -> pending transition
     const currentOrder = orders.find(o => o.id === orderId);
+
+    // Enforce payment status is PAID for COMPLETED orders
+    if (newStatus === "COMPLETED") {
+      if (currentOrder && currentOrder.paymentStatus !== "PAID") {
+        alert("Cannot mark order as COMPLETED because it has not been PAID yet.");
+        return;
+      }
+    }
+
+    // Prevent completed -> pending transition
     if (currentOrder && currentOrder.status === "COMPLETED" && newStatus === "PENDING") {
       alert("Cannot change status back to PENDING once it is COMPLETED.");
       return;
@@ -125,6 +144,14 @@ function AdminOrders() {
 
   // Handle Payment Status Update
   const handlePaymentStatusChange = async (orderId, newPaymentStatus) => {
+    const currentOrder = orders.find(o => o.id === orderId);
+
+    // Enforce that a COMPLETED order cannot have its payment status changed to unpaid
+    if (currentOrder && currentOrder.status === "COMPLETED" && newPaymentStatus !== "PAID") {
+      alert("Cannot change payment status of a COMPLETED order to unpaid.");
+      return;
+    }
+
     try {
       setStatusUpdateLoading(prev => ({ ...prev, [`pay-${orderId}`]: true }));
       const res = await orderService.updateOrderPaymentStatus(orderId, newPaymentStatus);
@@ -334,15 +361,34 @@ function AdminOrders() {
                       #{order.id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
-                        <span>
-                          {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric"
-                          })}
-                        </span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar size={14} className="text-gray-400" />
+                          <span>
+                            {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric"
+                            })}
+                          </span>
+                        </div>
+                        {order.Slot ? (
+                          <div className="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-1.5 mt-0.5 max-w-[180px]">
+                            <span className="font-semibold block text-gray-600 text-[10px] uppercase tracking-wider">Pickup Slot:</span>
+                            <span className="font-medium text-gray-800">
+                              {new Date(order.Slot.date).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                              })}
+                            </span>
+                            <span className="block text-[10px] text-gray-500">
+                              {formatTime12h(order.Slot.startTime)} - {formatTime12h(order.Slot.endTime)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-red-500 font-semibold italic">No Slot Selected</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-700">
@@ -506,6 +552,36 @@ function AdminOrders() {
                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Pickup Slot card */}
+                    <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 space-y-4">
+                      <h4 className="font-bold text-gray-800 flex items-center gap-2 pb-2 border-b">
+                        <Calendar size={16} className="text-green-600" />
+                        Selected Pickup Slot
+                      </h4>
+                      {orderDetails.Slot ? (
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <p className="text-xs text-gray-400 font-semibold uppercase">Date</p>
+                            <p className="font-bold text-gray-800 mt-0.5">
+                              {new Date(orderDetails.Slot.date).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric"
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 font-semibold uppercase">Time Range</p>
+                            <p className="font-medium text-gray-800 mt-0.5">
+                              {formatTime12h(orderDetails.Slot.startTime)} - {formatTime12h(orderDetails.Slot.endTime)}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-red-500 font-semibold italic">No Slot selected</p>
+                      )}
                     </div>
 
                     {/* Quick status updates */}

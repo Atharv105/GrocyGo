@@ -19,6 +19,7 @@ function AdminPickupSlots() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [viewMode, setViewMode] = useState("UPCOMING");
 
   const fetchSlots = async () => {
     try {
@@ -92,6 +93,39 @@ function AdminPickupSlots() {
     hr = hr ? hr : 12;
     return `${hr.toString().padStart(2, "0")}:${minute} ${ampm}`;
   };
+
+  const getLocalDateString = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalDateString();
+
+  const filteredSlots = slots.filter((slot) => {
+    if (viewMode === "UPCOMING") {
+      return slot.date >= todayStr;
+    }
+    if (viewMode === "PREVIOUS") {
+      return slot.date < todayStr;
+    }
+    return true; // "ALL"
+  });
+
+  const sortedSlots = [...filteredSlots].sort((a, b) => {
+    if (viewMode === "PREVIOUS") {
+      if (a.date !== b.date) {
+        return b.date.localeCompare(a.date);
+      }
+      return b.startTime.localeCompare(a.startTime);
+    } else {
+      if (a.date !== b.date) {
+        return a.date.localeCompare(b.date);
+      }
+      return a.startTime.localeCompare(b.startTime);
+    }
+  });
 
   return (
     <div className="space-y-8">
@@ -252,15 +286,32 @@ function AdminPickupSlots() {
         {/* List Column */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
-              <span>All Active Slots ({slots.length})</span>
-              <button
-                onClick={fetchSlots}
-                className="text-xs text-green-600 hover:underline font-bold"
-              >
-                Refresh
-              </button>
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b pb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {viewMode === "UPCOMING" && `Upcoming Slots (${sortedSlots.length})`}
+                {viewMode === "PREVIOUS" && `Previous Slots (${sortedSlots.length})`}
+                {viewMode === "ALL" && `All Slots (${sortedSlots.length})`}
+              </h2>
+              
+              <div className="flex items-center gap-3">
+                <select
+                  value={viewMode}
+                  onChange={(e) => setViewMode(e.target.value)}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+                >
+                  <option value="UPCOMING">Upcoming Slots (Today & Future)</option>
+                  <option value="PREVIOUS">Previous Slots (Past)</option>
+                  <option value="ALL">All Slots (Full History)</option>
+                </select>
+
+                <button
+                  onClick={fetchSlots}
+                  className="text-xs bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-2 rounded-xl font-bold transition"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -272,6 +323,16 @@ function AdminPickupSlots() {
                 <FaClock className="mx-auto text-gray-300 text-4xl mb-3 animate-pulse" />
                 <p className="text-gray-400 text-sm font-semibold">No slots generated yet</p>
                 <p className="text-gray-400 text-xs mt-1">Use the generator form on the left to set up pickup times.</p>
+              </div>
+            ) : sortedSlots.length === 0 ? (
+              <div className="text-center py-20 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                <FaClock className="mx-auto text-gray-300 text-4xl mb-3 animate-pulse" />
+                <p className="text-gray-400 text-sm font-semibold">
+                  {viewMode === "UPCOMING" && "No upcoming slots found"}
+                  {viewMode === "PREVIOUS" && "No previous slots found"}
+                  {viewMode === "ALL" && "No slots found"}
+                </p>
+                <p className="text-gray-400 text-xs mt-1">Try changing the filter dropdown above or generate new slots.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -286,7 +347,7 @@ function AdminPickupSlots() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {slots.map((slot) => {
+                      {sortedSlots.map((slot) => {
                         const isFull = slot.bookedCount >= slot.maxCapacity;
                         return (
                           <tr key={slot.id} className="hover:bg-gray-50/40 transition-colors">
