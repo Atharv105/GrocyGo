@@ -2,6 +2,7 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: "http://localhost:5000/api",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -9,13 +10,49 @@ const API = axios.create({
 
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // call axios directly with credentials enabled to send/receive refresh cookie
+        const res = await axios.post(
+          `${originalRequest.baseURL || "http://localhost:5000/api"}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+
+        if (res.data.success) {
+          const newAccessToken = res.data.data.accessToken;
+
+          sessionStorage.setItem("token", newAccessToken);
+
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return API(originalRequest);
+        }
+      } catch (refreshError) {
+        // Clear auth state and redirect on refresh failure
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
     return Promise.reject(error);
   }
 );

@@ -1,10 +1,22 @@
 import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { FaUserCircle, FaPhoneAlt, FaEdit, FaShieldAlt } from "react-icons/fa";
 
 function Settings() {
-  const { user } = useContext(AuthContext);
+  const { user, logoutAll } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogoutAll = async () => {
+    if (window.confirm("Are you sure you want to log out from all devices? This will invalidate all your other active sessions.")) {
+      try {
+        await logoutAll();
+        navigate("/login");
+      } catch (err) {
+        console.error("Failed to logout from all devices", err);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -55,6 +67,23 @@ function Settings() {
             Edit Profile
           </Link>
         </div>
+      </div>
+
+      {/* Security & Sessions */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <FaShieldAlt className="text-red-600" />
+          Security & Sessions
+        </h2>
+        <p className="text-gray-500 text-sm mb-4">
+          Suspect unauthorized access? You can force log out from all active sessions on other devices.
+        </p>
+        <button
+          onClick={handleLogoutAll}
+          className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+        >
+          Logout From All Devices
+        </button>
       </div>
 
       {/* App Preferences */}

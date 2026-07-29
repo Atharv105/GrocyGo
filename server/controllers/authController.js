@@ -1,233 +1,158 @@
-const bcrypt = require("bcrypt");
-const { generateToken } = require("../config/jwt");
-const db = require("../models");
+const authService = require("../services/authService");
 
-const User = db.User;
-
-// =========================
-// Register User
-// =========================
-const register = async (req, res) => {
-    try {
-        const { name, mobile, password } = req.body;
-
-        // Check if all fields are provided
-        if (!name || !mobile || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "All fields are required",
-            });
-        }
-
-        // Validate mobile number length
-        if (mobile.length !== 10) {
-            return res.status(400).json({
-                success: false,
-                message: "Mobile number must be exactly 10 digits",
-            });
-        }
-        // Check if mobile number already exists
-        const existingUser = await User.findOne({
-            where: { mobile },
-        });
-
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: "mobile number already registered",
-            });
-        }
-
-        // Encrypt password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create user
-        const user = await User.create({
-            name,
-            mobile,
-            password: hashedPassword,
-        });
-
-        // Generate JWT
-        const token = generateToken(user);
-
-        res.status(201).json({
-            success: true,
-            message: "User registered successfully",
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                mobile: user.mobile,
-                role: user.role,
-            },
-        });
-
-    } catch (error) {
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-        });
-    }
+const setRefreshTokenCookie = (res, token) => {
+  res.cookie("refreshToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
 };
 
-// =========================
-// Login User
-// =========================
-
-const login = async (req, res) => {
-    try {
-        const { mobile, password } = req.body;
-
-        // Check if all fields are provided
-        if (!mobile || !password) {
-            res.status(400).json({
-                success: false,
-                message: "mobile number and Password are required"
-            });
-        }
-
-        const user = await User.findOne({
-            where: { mobile },
-        });
-
-        if(!user){
-            res.status(400).json({
-                success: false,
-                message : "User not found",
-            });
-        }
-
-        //compare password
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if(!isMatch){
-            res.status(401).json({
-                success: false,
-                message : "Invalid password",
-            });
-        }
-
-        //Generate JWT
-        const token = generateToken(user);
-
-        res.status(200).json({
-            success: true,
-            message: "User logged in successfully",
-            token,
-            user:{
-                id : user.id,
-                name : user.name,
-                mobile : user.mobile,
-                role : user.role,
-            }
-        })
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-        });
-    }
-}
-
-// =========================
-// Get Logged In User
-// =========================
-const profile = async (req, res) => {
+// Refresh Token
+const refreshToken = async (req, res, next) => {
   try {
+    const token = req.cookies.refreshToken;
+    const result = await authService.refreshToken(token);
 
-    const user = await User.findByPk(req.user.id, {
-      attributes: {
-        exclude: ["password"],
-      },
-    });
+    setRefreshTokenCookie(res, result.refreshToken);
 
     res.status(200).json({
       success: true,
-      user,
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: result.accessToken,
+      },
     });
-
   } catch (error) {
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-
+    next(error);
   }
 };
 
-// =========================
-// Update User Profile
-// =========================
-const updateProfile = async (req, res) => {
+// Logout
+const logout = async (req, res, next) => {
   try {
-    const { name, mobile } = req.body;
-
-    if (!name || !mobile) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and Mobile number are required",
-      });
+    const token = req.cookies.refreshToken;
+    if (token) {
+      await authService.revokeRefreshToken(token);
     }
-
-    if (mobile.length !== 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number must be exactly 10 digits",
-      });
-    }
-
-    // Check if mobile number is already taken by another user
-    const existingUser = await User.findOne({
-      where: { mobile },
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
-    if (existingUser && existingUser.id !== req.user.id) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number already in use by another user",
-      });
-    }
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+// Logout All Devices
+const logoutAll = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await authService.revokeAllUserRefreshTokens(userId);
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    res.status(200).json({
+      success: true,
+      message: "Logged out from all devices successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    user.name = name;
-    user.mobile = mobile;
-    await user.save();
+// Profile
+const profile = async (req, res, next) => {
+    try {
+        const user = await authService.profile(req.user.id);
+
+        res.status(200).json({
+            success: true,
+            user,
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Update Profile
+const updateProfile = async (req, res, next) => {
+    try {
+        const user = await authService.updateProfile(req.user.id, req.body);
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user,
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Send OTP
+const sendOtp = async (req, res, next) => {
+  try {
+    const result = await authService.sendOtp(req.body.mobile);
 
     res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        mobile: user.mobile,
-        role: user.role,
+      message: result.message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Verify OTP
+const verifyOtp = async (req, res, next) => {
+  try {
+    const result = await authService.verifyOtp(req.body);
+
+    if (result.requiresPassword) {
+      return res.status(200).json({
+        success: false,
+        requiresPassword: true,
+        message: result.message,
+      });
+    }
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
       },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
+    next(error);
   }
 };
 
 module.exports = {
-    register,
-    login,
     profile,
-    updateProfile
+    updateProfile,
+    refreshToken,
+    logout,
+    logoutAll,
+    sendOtp,
+    verifyOtp
 };
-
