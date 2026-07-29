@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
       setUser(null);
     }
   };
-
+ //logout from all devices
   const logoutAll = async () => {
     try {
       await API.post("/auth/logout-all");
