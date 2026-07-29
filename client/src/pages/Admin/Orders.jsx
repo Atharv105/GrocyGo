@@ -156,9 +156,18 @@ function AdminOrders() {
       setStatusUpdateLoading(prev => ({ ...prev, [`pay-${orderId}`]: true }));
       const res = await orderService.updateOrderPaymentStatus(orderId, newPaymentStatus);
       if (res.success) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, paymentStatus: newPaymentStatus } : o));
+        const updatedOrder = res.data;
+        setOrders(prev => prev.map(o => o.id === orderId ? {
+          ...o,
+          paymentStatus: updatedOrder?.paymentStatus || newPaymentStatus,
+          status: updatedOrder?.status || o.status
+        } : o));
         if (selectedOrderId === orderId) {
-          setOrderDetails(prev => prev ? { ...prev, paymentStatus: newPaymentStatus } : null);
+          setOrderDetails(prev => prev ? {
+            ...prev,
+            paymentStatus: updatedOrder?.paymentStatus || newPaymentStatus,
+            status: updatedOrder?.status || prev.status
+          } : null);
         }
       } else {
         alert(res.message || "Failed to update payment status");
@@ -375,13 +384,6 @@ function AdminOrders() {
                         {order.Slot ? (
                           <div className="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-1.5 mt-0.5 max-w-[180px]">
                             <span className="font-semibold block text-gray-600 text-[10px] uppercase tracking-wider">Pickup Slot:</span>
-                            <span className="font-medium text-gray-800">
-                              {new Date(order.Slot.date).toLocaleDateString("en-IN", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric"
-                              })}
-                            </span>
                             <span className="block text-[10px] text-gray-500">
                               {formatTime12h(order.Slot.startTime)} - {formatTime12h(order.Slot.endTime)}
                             </span>

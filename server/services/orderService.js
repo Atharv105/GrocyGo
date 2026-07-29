@@ -458,39 +458,86 @@ const updateOrderStatus = async (orderId, status) => {
 };
 
 const updatePaymentStatus = async (orderId, paymentStatus) => {
+  const transaction = await sequelize.transaction();
 
-  const order = await Order.findByPk(orderId);
+  try {
+    const order = await Order.findByPk(orderId, {
+      include: [
+        {
+          model: OrderItem,
+        },
+      ],
+      transaction,
+    });
 
-  if (!order) {
-    throw new AppError("Order not found", 404);
+    if (!order) {
+      throw new AppError("Order not found", 404);
+    }
+
+    if (order.status === "COMPLETED" && paymentStatus !== "PAID") {
+      throw new AppError(
+        "Cannot change payment status of a COMPLETED order to unpaid",
+        400
+      );
+    }
+
+    if (order.status !== "CONFIRMED" && order.status !== "COMPLETED") {
+      throw new AppError(
+        "Payment can only be marked after the order is confirmed",
+        400
+      );
+    }
+
+    const validPaymentStatuses = ["PENDING", "PAID", "FAILED"];
+    if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+      throw new AppError("Invalid payment status", 400);
+    }
+
+    order.paymentStatus = paymentStatus || "PAID";
+
+    if (order.paymentStatus === "FAILED") {
+      order.status = "CANCELLED";
+
+      // Restore stock
+      for (const item of order.OrderItems) {
+        const product = await Product.findByPk(item.productId, {
+          transaction,
+        });
+
+        if (product) {
+          await Product.increment("stock", {
+            by: item.quantity,
+            where: {
+              id: item.productId,
+            },
+            transaction,
+          });
+        }
+      }
+
+      // Update Slot bookedCount
+      const slot = await Slot.findByPk(order.slotId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      if (slot && slot.bookedCount > 0) {
+        await slot.decrement("bookedCount", {
+          by: 1,
+          transaction,
+        });
+      }
+    }
+
+    await order.save({ transaction });
+    await transaction.commit();
+
+    return order;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-
-  if (order.status === "COMPLETED" && paymentStatus !== "PAID") {
-    throw new AppError(
-      "Cannot change payment status of a COMPLETED order to unpaid",
-      400
-    );
-  }
-
-  if (order.status !== "CONFIRMED" && order.status !== "COMPLETED") {
-    throw new AppError(
-      "Payment can only be marked after the order is confirmed",
-      400
-    );
-  }
-
-  const validPaymentStatuses = ["PENDING", "PAID", "FAILED"];
-  if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
-    throw new AppError("Invalid payment status", 400);
-  }
-
-  order.paymentStatus = paymentStatus || "PAID";
-
-  await order.save();
-
-  return order;
-}
-
+};
 
 module.exports = {
   checkout,

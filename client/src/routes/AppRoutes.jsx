@@ -9,7 +9,6 @@ import PublicOnlyRoute from "../components/Layout/PublicOnlyRoute";
 
 import Home from "../pages/Home";
 import Login from "../pages/Login";
-import Register from "../pages/Register";
 import Products from "../pages/Products";
 import Cart from "../pages/Cart";
 
@@ -45,7 +44,6 @@ function AppRoutes() {
       {/* ── Public-only routes (redirect if logged in) ──────── */}
       <Route element={<PublicOnlyRoute />}>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
       </Route>
 
       {/* ── Protected: any logged-in user ────────────────────── */}
