@@ -56,18 +56,21 @@ export function AuthProvider({ children }) {
     loadUser();
   }, []);
 
-  const login = async (mobile, password) => {
-    const res = await API.post("/auth/login", { mobile, password });
-    if (res.data.success) {
-      sessionStorage.setItem("token", res.data.accessToken);
-      sessionStorage.setItem("user", JSON.stringify(res.data.user));
-      setUser(res.data.user);
-    }
+  const sendOtp = async (mobile) => {
+    const res = await API.post("/auth/send-otp", { mobile });
     return res.data;
   };
 
-  const register = async (name, mobile, password) => {
-    const res = await API.post("/auth/register", { name, mobile, password });
+  const verifyOtp = async (mobile, otp, name = null, password = null) => {
+    const payload = { mobile, otp };
+    if (name) payload.name = name;
+    if (password) payload.password = password;
+    const res = await API.post("/auth/verify-otp", payload);
+    if (res.data.success) {
+      sessionStorage.setItem("token", res.data.data.accessToken);
+      sessionStorage.setItem("user", JSON.stringify(res.data.data.user));
+      setUser(res.data.data.user);
+    }
     return res.data;
   };
 
@@ -82,14 +85,15 @@ export function AuthProvider({ children }) {
         user,
         loading,
         isLoggedIn: !!user,
-        login,
-        register,
         logout,
         logoutAll,
         updateProfileState,
+        sendOtp,
+        verifyOtp,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
+

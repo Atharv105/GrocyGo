@@ -95,38 +95,21 @@ function Navbar() {
               🛍️ Shop
             </Link>
             {!isLoggedIn ? (
-              <>
-                <Link
-                  to="/login"
-                  className="
-                  px-5
-                  py-2.5
-                  text-green-700
-                  font-medium
-                  rounded-full
-                  hover:bg-green-50
-                  transition
-                  "
-                >
-                  Login
-                </Link>
-
-                <Link
-                  to="/register"
-                  className="
-                  px-5
-                  py-2.5
-                  bg-green-600
-                  text-white
-                  font-medium
-                  rounded-full
-                  hover:bg-green-700
-                  transition
-                  "
-                >
-                  Sign Up
-                </Link>
-              </>
+              <Link
+                to="/login"
+                className="
+                px-6
+                py-2.5
+                bg-green-600
+                text-white
+                font-medium
+                rounded-full
+                hover:bg-green-700
+                transition
+                "
+              >
+                Login
+              </Link>
             ) : (
               <>
                 {/* Cart */}
@@ -299,36 +282,21 @@ function Navbar() {
             />
 
             {!isLoggedIn ? (
-              <div className="flex gap-3">
-                <Link
-                  to="/login"
-                  className="
-                  flex-1
-                  text-center
-                  py-3
-                  rounded-xl
-                  border
-                  border-green-600
-                  text-green-700
-                  "
-                >
-                  Login
-                </Link>
-
-                <Link
-                  to="/register"
-                  className="
-                  flex-1
-                  text-center
-                  py-3
-                  rounded-xl
-                  bg-green-600
-                  text-white
-                  "
-                >
-                  Sign Up
-                </Link>
-              </div>
+              <Link
+                to="/login"
+                className="
+                block
+                w-full
+                text-center
+                py-3
+                rounded-xl
+                bg-green-600
+                text-white
+                font-medium
+                "
+              >
+                Login
+              </Link>
             ) : (
               <div className="space-y-3">
                 <Link to={user?.role === "ADMIN" ? "/admin" : "/dashboard"} className="block">

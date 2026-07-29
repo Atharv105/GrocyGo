@@ -1,6 +1,22 @@
 const { Slot } = require("../models");
 const AppError = require("../utils/AppError");
 const { Op , col } = require("sequelize");
+const dayjs = require("dayjs");
+
+const deactivatePastSlots = async () => {
+    const todayStr = dayjs().format("YYYY-MM-DD");
+    await Slot.update(
+        { isActive: false },
+        {
+            where: {
+                date: {
+                    [Op.lt]: todayStr,
+                },
+                isActive: true,
+            },
+        }
+    );
+};
 
 const createSlot = async (slotData) => {
     // Check if a slot already exists for the same date and time
@@ -32,6 +48,7 @@ const createSlot = async (slotData) => {
 };
 
 const getAllSlots = async () => {
+    await deactivatePastSlots();
     const slots = await Slot.findAll({
         order: [
             ["date", "ASC"],
@@ -41,8 +58,6 @@ const getAllSlots = async () => {
 
     return slots;
 };
-
-const dayjs = require("dayjs");
 
 const generateSlots = async (data) => {
     const {
@@ -174,6 +189,8 @@ const getAvailableSlots = async (date) => {
   if (!date) {
     throw new AppError("Date is required", 400);
   }
+
+  await deactivatePastSlots();
 
   const slots = await Slot.findAll({
     where: {
