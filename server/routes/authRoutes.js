@@ -1,21 +1,26 @@
 const express = require('express');
 const router = express.Router();
 
-const { register, login, profile, updateProfile } = require('../controllers/authController');
+const { profile, updateProfile, refreshToken, logout, logoutAll ,sendOtp, verifyOtp} = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
-// Register Route
-router.post("/register", register);
 
-// Login Route
-router.post("/login", login);
+// Refresh Token Route
+router.post("/refresh", refreshToken);
+
+// Logout Route
+router.post("/logout", logout);
+
+// Logout All Devices Route
+router.post("/logout-all", authMiddleware, logoutAll);
 
 // Profile Route
 router.get("/profile", authMiddleware, profile);
 router.put("/profile", authMiddleware, updateProfile);
 
-router.get("/admin", authMiddleware, adminMiddleware, (req, res) => {
-    res.json({ success: true, message: "Welcome, Admin!" });
-});
+// OTP Routes
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
+
 
 module.exports = router;

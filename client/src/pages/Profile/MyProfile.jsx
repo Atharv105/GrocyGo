@@ -15,7 +15,7 @@ function MyProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) {
         navigate("/login");
         return;
@@ -53,7 +53,7 @@ function MyProfile() {
 
               <h1 className="text-3xl font-bold mt-4">{user.name}</h1>
 
-              <p className="text-gray-500">GrocyGo Customer</p>
+              <p className="text-gray-500">GrocyGo {user.role}</p>
             </div>
 
             {/* Information */}

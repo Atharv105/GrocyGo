@@ -13,45 +13,47 @@ db.CartItem = require("./CartItem");
 db.Order = require("./Order");
 db.OrderItem = require("./OrderItem");
 db.Slot = require("./Slot");
+db.RefreshToken = require("./RefreshToken");
+db.Otp = require("./Otp");
 
 // Relationships
-db.Category.hasMany(db.Product,{
-    foreignKey: "categoryId",
-    onDelete: "RESTRICT",
+db.Category.hasMany(db.Product, {
+  foreignKey: "categoryId",
+  onDelete: "RESTRICT",
 });
 
-db.Product.belongsTo(db.Category,{
-    foreignKey: "categoryId",
+db.Product.belongsTo(db.Category, {
+  foreignKey: "categoryId",
 });
 
 
 //User <-> Cart
-db.User.hasOne(db.Cart,{
-    foreignKey : "userId",
-    onDelete : "CASCADE",
+db.User.hasOne(db.Cart, {
+  foreignKey: "userId",
+  onDelete: "CASCADE",
 });
 
-db.Cart.belongsTo(db.User,{
-    foreignKey : "userId",
+db.Cart.belongsTo(db.User, {
+  foreignKey: "userId",
 });
 
 //Cart <-> CartItem
-db.Cart.hasMany(db.CartItem,{
-    foreignKey : "cartId",
-    onDelete : "CASCADE",
+db.Cart.hasMany(db.CartItem, {
+  foreignKey: "cartId",
+  onDelete: "CASCADE",
 });
 
-db.CartItem.belongsTo(db.Cart,{
-    foreignKey : "cartId",
+db.CartItem.belongsTo(db.Cart, {
+  foreignKey: "cartId",
 });
 
 //Product <-> CartItem
-db.Product.hasMany(db.CartItem,{
-    foreignKey : "productId",
+db.Product.hasMany(db.CartItem, {
+  foreignKey: "productId",
 });
 
-db.CartItem.belongsTo(db.Product,{
-    foreignKey : "productId",
+db.CartItem.belongsTo(db.Product, {
+  foreignKey: "productId",
 });
 
 
@@ -98,5 +100,14 @@ db.Order.belongsTo(db.Slot, {
   foreignKey: "slotId",
 });
 
+// User ↔ RefreshToken
+db.User.hasMany(db.RefreshToken, {
+  foreignKey: "userId",
+  onDelete: "CASCADE",
+});
+
+db.RefreshToken.belongsTo(db.User, {
+  foreignKey: "userId",
+});
 
 module.exports = db;

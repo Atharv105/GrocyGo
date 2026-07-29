@@ -8,10 +8,13 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 
+import { useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
 
   const menus = [
     {
@@ -46,10 +49,8 @@ function Sidebar() {
     },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 

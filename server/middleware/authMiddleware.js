@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { verifyAccessToken } = require("../utils/token");
 
 const authMiddleware = (req, res, next) => {
   try {
@@ -13,11 +13,8 @@ const authMiddleware = (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    // Remove "Bearer " from token
-    const actualToken = token.replace("Bearer ", "");
-
     // Verify Token
-    const decoded = jwt.verify(actualToken, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
 
     // Save user data in request
     req.user = decoded;
