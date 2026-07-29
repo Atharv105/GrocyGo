@@ -12,11 +12,9 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // OTP related states
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
 
-  // Admin password confirmation modal states
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [modalError, setModalError] = useState("");
