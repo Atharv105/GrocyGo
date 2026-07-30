@@ -17,8 +17,8 @@ export const cancelOrder = (orderId) =>
   API.put(`/orders/${orderId}/cancel`).then((r) => r.data);
 
 /** Admin: Get all orders */
-export const getAllOrdersAdmin = () =>
-  API.get("/orders/admin/orders").then((r) => r.data);
+export const getAllOrdersAdmin = (limit = 1000) =>
+  API.get("/orders/admin/orders", { params: { limit } }).then((r) => r.data);
 
 /** Admin: Get details for any order */
 export const getOrderByIdAdmin = (orderId) =>
