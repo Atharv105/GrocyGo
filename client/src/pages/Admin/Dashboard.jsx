@@ -45,9 +45,9 @@ function Dashboard() {
           setLowStockCount(lowStockItems.length);
         }
 
-        const orderRes = await API.get("/orders/admin/orders");
+        const orderRes = await API.get("/orders/admin/orders?limit=1000");
         if (orderRes.data.success) {
-          const orders = orderRes.data.data || [];
+          const orders = orderRes.data.data?.orders || [];
           
           // Calculate today's date range (in local time)
           const startOfToday = new Date();
