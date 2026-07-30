@@ -79,11 +79,22 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
     }
     console.log("Cart found successfully.");
 
+    // Lock the products to prevent concurrent stock updates
+    const productIds = cart.CartItems.map((item) => item.productId);
+    const lockedProducts = await Product.findAll({
+      where: { id: productIds },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    // Map locked products by ID for quick lookup
+    const productMap = new Map(lockedProducts.map((p) => [p.id, p]));
+
     let totalAmount = 0;
 
     // Validate every product
     for (const item of cart.CartItems) {
-      const product = item.Product;
+      const product = productMap.get(item.productId);
 
       // Product deleted or inactive
       if (!product || !product.isActive) {
@@ -125,13 +136,14 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
 
     // Create Order Items
     for (const item of cart.CartItems) {
+      const product = productMap.get(item.productId);
       await OrderItem.create(
         {
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
-          price: item.Product.price,
-          subtotal: Number(item.Product.price) * item.quantity,
+          price: product.price,
+          subtotal: Number(product.price) * item.quantity,
         },
         {
           transaction,
@@ -316,8 +328,26 @@ const cancelOrder = async (userId, orderId) => {
 };
 
 
-const getAllOrders = async () => {
-  const orders = await Order.findAll({
+const getAllOrders = async (query = {}) => {
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    paymentStatus,
+  } = query;
+
+  const where = {};
+  if (status) {
+    where.status = status;
+  }
+  if (paymentStatus) {
+    where.paymentStatus = paymentStatus;
+  }
+
+  const offset = (page - 1) * limit;
+
+  const { count, rows } = await Order.findAndCountAll({
+    where,
     attributes: [
       "id",
       "userId",
@@ -337,9 +367,16 @@ const getAllOrders = async () => {
       },
     ],
     order: [["createdAt", "DESC"]],
+    limit: Number(limit),
+    offset: Number(offset),
   });
 
-  return orders;
+  return {
+    totalOrders: count,
+    currentPage: Number(page),
+    totalPages: Math.ceil(count / limit),
+    orders: rows,
+  };
 };
 
 const getAdminOrderById = async (orderId) => {
