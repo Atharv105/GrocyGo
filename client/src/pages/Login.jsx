@@ -86,7 +86,10 @@ function Login() {
       const res = await verifyOtp(formData.mobile, otp);
       if (res.success) {
         const userRole = res.data?.user?.role;
-        if (userRole === "CUSTOMER") {
+        const isNewUser = res.data?.isNewUser;
+        if (isNewUser) {
+          navigate("/profile/edit");
+        } else if (userRole === "CUSTOMER") {
           navigate("/");
         } else if (userRole === "ADMIN") {
           navigate("/admin");

@@ -60,6 +60,16 @@ function MyProfile() {
 
             <div className="grid md:grid-cols-2 gap-8 mt-10">
               <div className="flex items-center gap-4 p-5 rounded-2xl bg-green-50">
+                <FaUserCircle className="text-green-700 text-xl" />
+
+                <div>
+                  <p className="text-gray-500 text-sm">Full Name</p>
+
+                  <h3 className="font-semibold">{user.name || "Not Provided"}</h3>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-5 rounded-2xl bg-green-50">
                 <FaPhoneAlt className="text-green-700 text-xl" />
 
                 <div>

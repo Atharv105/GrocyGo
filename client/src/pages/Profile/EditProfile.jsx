@@ -6,11 +6,13 @@ import { AuthContext } from "../../context/AuthContext";
 
 function EditProfile() {
   const navigate = useNavigate();
-  const { updateProfileState } = useContext(AuthContext);
+  const { updateProfileState, user } = useContext(AuthContext);
+  const isNewOrIncomplete = !user || user.name === "User" || !user.address;
 
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
+    address: "",
   });
 
   useEffect(() => {
@@ -18,8 +20,9 @@ function EditProfile() {
       try {
         const res = await API.get("/auth/profile");
         setFormData({
-          name: res.data.user.name,
-          mobile: res.data.user.mobile,
+          name: res.data.user.name || "",
+          mobile: res.data.user.mobile || "",
+          address: res.data.user.address || "",
         });
       } catch (err) {
         console.log(err);
@@ -39,11 +42,26 @@ function EditProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.name.trim()) {
+      alert("Full Name is required.");
+      return;
+    }
+
+    if (formData.name.trim().toLowerCase() === "user") {
+      alert("Please update your name to something other than 'User'.");
+      return;
+    }
+
+    if (!formData.address.trim()) {
+      alert("Address is required.");
+      return;
+    }
+
     try {
       const res = await API.put("/auth/profile", formData);
       updateProfileState(res.data.user);
       alert("Profile Updated Successfully");
-      navigate("/profile");
+      navigate("/");
     } catch (err) {
       console.log(err);
       alert(err.response?.data?.message || "Failed to update profile");
@@ -105,6 +123,21 @@ function EditProfile() {
             />
           </div>
 
+          {/* Address */}
+
+          <div className="mt-6">
+            <label className="font-medium">Address</label>
+
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Enter your address"
+              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
           {/* Buttons */}
 
           <div className="flex gap-4 mt-10">
@@ -115,13 +148,15 @@ function EditProfile() {
               Save Changes
             </button>
 
-            <button
-              type="button"
-              onClick={() => navigate("/profile")}
-              className="flex-1 border border-gray-300 py-4 rounded-xl font-semibold hover:bg-gray-100"
-            >
-              Cancel
-            </button>
+            {!isNewOrIncomplete && (
+              <button
+                type="button"
+                onClick={() => navigate("/profile")}
+                className="flex-1 border border-gray-300 py-4 rounded-xl font-semibold hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </div>
