@@ -7,16 +7,14 @@ function Login() {
   const navigate = useNavigate();
   const { sendOtp, verifyOtp } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState({ mobile: "", password: "" });
+  const [formData, setFormData] = useState({ mobile: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // OTP related states
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
 
-  // Admin password confirmation modal states
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [modalError, setModalError] = useState("");
@@ -31,8 +29,8 @@ function Login() {
     e.preventDefault();
     setError("");
 
-    if (!formData.mobile || !formData.password) {
-      setError("Mobile number and password are required.");
+    if (!formData.mobile) {
+      setError("Mobile number is required.");
       return;
     }
 
@@ -46,8 +44,6 @@ function Login() {
       const res = await sendOtp(formData.mobile);
       if (res.success) {
         setIsOtpSent(true);
-        // Pre-fill the admin password modal input with the password they typed initially
-        setAdminPassword(formData.password);
       } else {
         setError(res.message || "Failed to send OTP. Please try again.");
       }
@@ -182,28 +178,6 @@ function Login() {
                     maxLength={10}
                     className="w-full mt-2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition"
                   />
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label className="text-gray-600 font-medium text-sm">Password</label>
-                  <div className="relative mt-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition pr-12"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
                 </div>
 
                 {/* Submit */}
