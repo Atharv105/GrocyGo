@@ -140,6 +140,7 @@ const verifyOtp = async (req, res, next) => {
       data: {
         user: result.user,
         accessToken: result.accessToken,
+        isNewUser: result.isNewUser,
       },
     });
   } catch (error) {
