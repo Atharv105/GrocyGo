@@ -8,6 +8,7 @@ function CloudinaryGalleryModal({ isOpen, onClose, onSelect, initialTab = "produ
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolder, setSelectedFolder] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,6 +38,37 @@ function CloudinaryGalleryModal({ isOpen, onClose, onSelect, initialTab = "produ
       console.error("Error loading Cloudinary images:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("target", activeTab);
+
+    try {
+      setUploading(true);
+      const res = await API.post("/cloudinary/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.success) {
+        alert("Image uploaded successfully!");
+        await fetchCloudinaryImages();
+        if (res.data.data.url) {
+          onSelect(res.data.data.url);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+      alert(err.response?.data?.message || "Failed to upload image.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -156,6 +188,27 @@ function CloudinaryGalleryModal({ isOpen, onClose, onSelect, initialTab = "produ
               />
               <FaSearch className="absolute left-3.5 top-3.5 text-gray-400" />
             </div>
+
+            {/* Upload Button */}
+            <label className={`bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition text-sm shadow-sm cursor-pointer ${uploading ? "opacity-75 cursor-not-allowed" : ""}`}>
+              {uploading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <FaCloud /> Upload Image
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUpload}
+                disabled={uploading}
+              />
+            </label>
           </div>
         </div>
 
