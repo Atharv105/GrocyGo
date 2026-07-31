@@ -8,6 +8,9 @@ function AdminReports() {
     totalCategories: 0,
     lowStock: 0,
   });
+  const [allOrders, setAllOrders] = useState([]);
+  const [period, setPeriod] = useState("7_DAYS"); // "7_DAYS", "30_DAYS", "ALL_TIME"
+  
   const [orderStats, setOrderStats] = useState({
     totalRevenue: 0,
     aov: 0,
@@ -30,7 +33,7 @@ function AdminReports() {
         const [prodRes, catRes, orderRes] = await Promise.all([
           API.get("/products?limit=1000"),
           API.get("/categories"),
-          API.get("/orders/admin/orders"),
+          API.get("/orders/admin/orders?limit=1000"),
         ]);
 
         // Products and categories
@@ -42,48 +45,8 @@ function AdminReports() {
           lowStock: products.filter((p) => p.stock <= 5).length,
         });
 
-        // Orders processing
-        const orders = orderRes.data.data || [];
-        const paidOrders = orders.filter((o) => o.paymentStatus === "PAID");
-        const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
-        const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
-        
-        setOrderStats({
-          totalRevenue,
-          aov,
-          orderCount: orders.length,
-        });
-
-        // Calculate status distribution
-        const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
-        orders.forEach((o) => {
-          if (dist[o.status] !== undefined) {
-            dist[o.status]++;
-          }
-        });
-        setStatusDistribution(dist);
-
-        // Calculate last 7 days sales map (initialized to 0)
-        const dailyMap = {};
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().split("T")[0];
-          dailyMap[dateStr] = {
-            dateLabel: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
-            revenue: 0,
-          };
-        }
-
-        // Fill sales data
-        orders.forEach((o) => {
-          const dateStr = o.createdAt.split("T")[0];
-          if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
-            dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
-          }
-        });
-
-        setDailySales(Object.values(dailyMap));
+        // Store all orders in state
+        setAllOrders(orderRes.data.data?.orders || []);
       } catch (err) {
         console.error("Error loading report analytics:", err);
       } finally {
@@ -94,10 +57,76 @@ function AdminReports() {
     fetchReportData();
   }, []);
 
+  // Compute stats and daily sales dynamically based on selected period
+  useEffect(() => {
+    if (!allOrders.length) return;
+
+    let filteredOrders = allOrders;
+    const now = new Date();
+    if (period === "7_DAYS") {
+      const minDate = new Date();
+      minDate.setDate(now.getDate() - 6);
+      minDate.setHours(0, 0, 0, 0);
+      filteredOrders = allOrders.filter((o) => new Date(o.createdAt) >= minDate);
+    } else if (period === "30_DAYS") {
+      const minDate = new Date();
+      minDate.setDate(now.getDate() - 29);
+      minDate.setHours(0, 0, 0, 0);
+      filteredOrders = allOrders.filter((o) => new Date(o.createdAt) >= minDate);
+    }
+
+    // Process orders stats
+    const paidOrders = filteredOrders.filter((o) => o.paymentStatus === "PAID");
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+    const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
+    
+    setOrderStats({
+      totalRevenue,
+      aov,
+      orderCount: filteredOrders.length,
+    });
+
+    // Calculate status distribution
+    const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
+    filteredOrders.forEach((o) => {
+      if (dist[o.status] !== undefined) {
+        dist[o.status]++;
+      }
+    });
+    setStatusDistribution(dist);
+
+    // Calculate sales map for the period (either 7 days or 30 days)
+    // For ALL_TIME, we show the last 30 days daily trend to keep the chart readable.
+    const daysToDraw = period === "7_DAYS" ? 7 : 30;
+    const dailyMap = {};
+    for (let i = daysToDraw - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      dailyMap[dateStr] = {
+        dateLabel: period === "7_DAYS"
+          ? d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" })
+          : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+        shortLabel: d.toLocaleDateString("en-IN", { day: "numeric" }),
+        revenue: 0,
+      };
+    }
+
+    // Fill sales data (from all orders matching the chart date range)
+    allOrders.forEach((o) => {
+      const dateStr = o.createdAt.split("T")[0];
+      if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
+        dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
+      }
+    });
+
+    setDailySales(Object.values(dailyMap));
+  }, [allOrders, period]);
+
   const statCards = [
-    { label: "Total Revenue", value: `₹${orderStats.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaDollarSign />, color: "bg-emerald-500", text: "Paid earnings" },
+    { label: "Total Revenue", value: `₹${orderStats.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaDollarSign />, color: "bg-emerald-500", text: `Paid earnings (${period === "7_DAYS" ? "last 7d" : period === "30_DAYS" ? "last 30d" : "all-time"})` },
     { label: "Average Order Value (AOV)", value: `₹${orderStats.aov.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaCalculator />, color: "bg-blue-500", text: "Revenue per paid basket" },
-    { label: "Total Orders", value: orderStats.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: "Placed order logs" },
+    { label: "Total Orders", value: orderStats.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: `Placed logs (${period === "7_DAYS" ? "7d" : period === "30_DAYS" ? "30d" : "all"})` },
     { label: "Total Products", value: stats.totalProducts.toString(), icon: <FaBoxes />, color: "bg-green-500", text: "Active catalog items" },
     { label: "Total Categories", value: stats.totalCategories.toString(), icon: <FaTags />, color: "bg-orange-500", text: "Product groups" },
     { label: "Low Stock Alerts", value: stats.lowStock.toString(), icon: <FaBoxes />, color: "bg-red-500", text: "5 units or less" },
@@ -106,15 +135,41 @@ function AdminReports() {
   // SVG Chart configurations
   const maxRevenue = Math.max(...dailySales.map((d) => d.revenue), 100); // fallback to 100
   const chartHeight = 150;
-  const barWidth = 44;
-  const gap = 30;
+  const numDays = dailySales.length || 7;
   const paddingLeft = 75;
+  const paddingRight = 20;
+  const availableChartWidth = 600 - paddingLeft - paddingRight; // 505px
+  const totalBarSpace = availableChartWidth / numDays;
+  const barWidth = Math.max(Math.floor(totalBarSpace * 0.65), 5);
+  const gap = totalBarSpace - barWidth;
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Reports & Analytics</h1>
-        <p className="text-gray-500 mt-2 text-base">Visualize financial metrics and category catalogs.</p>
+      {/* Header with period selection filter */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Reports & Analytics</h1>
+          <p className="text-gray-500 mt-2 text-base">Visualize financial metrics and category catalogs.</p>
+        </div>
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl self-start md:self-auto border border-gray-200/50 shadow-sm">
+          {[
+            { id: "7_DAYS", label: "7 Days" },
+            { id: "30_DAYS", label: "30 Days" },
+            { id: "ALL_TIME", label: "All Time" },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setPeriod(opt.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                period === opt.id
+                  ? "bg-white text-green-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -140,7 +195,7 @@ function AdminReports() {
         <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
-              <FaChartBar className="text-green-600" /> Daily Revenue (Last 7 Days)
+              <FaChartBar className="text-green-600" /> Daily Revenue ({period === "7_DAYS" ? "Last 7 Days" : "Last 30 Days"})
             </h2>
             <p className="text-xs text-gray-400 mb-6">Excludes pending or cancelled orders.</p>
           </div>
@@ -166,7 +221,7 @@ function AdminReports() {
 
                   {dailySales.map((day, index) => {
                     const barHeight = (day.revenue / maxRevenue) * chartHeight;
-                    const x = paddingLeft + index * (barWidth + gap) + 15;
+                    const x = paddingLeft + index * (barWidth + gap) + gap / 2;
                     const y = 190 - barHeight;
                     const isHovered = hoveredBarIndex === index;
 
@@ -179,9 +234,9 @@ function AdminReports() {
                       >
                         {/* Hover Overlay */}
                         <rect
-                          x={x - 8}
+                          x={x - gap / 4}
                           y="30"
-                          width={barWidth + 16}
+                          width={barWidth + gap / 2}
                           height="170"
                           fill={isHovered ? "rgba(243, 244, 246, 0.45)" : "transparent"}
                           rx="10"
@@ -195,7 +250,7 @@ function AdminReports() {
                           width={barWidth}
                           height={barHeight}
                           fill={isHovered ? "#059669" : "#10b981"}
-                          rx="5"
+                          rx={numDays > 10 ? "2" : "5"}
                           className="transition-all duration-300 ease-out"
                         />
                         
@@ -204,9 +259,9 @@ function AdminReports() {
                           x={x + barWidth / 2}
                           y="210"
                           textAnchor="middle"
-                          className={`text-[10px] font-bold transition-colors duration-150 ${isHovered ? "fill-gray-800" : "fill-gray-400"}`}
+                          className={`text-[9px] font-bold transition-colors duration-150 ${isHovered ? "fill-gray-800" : "fill-gray-400"}`}
                         >
-                          {day.dateLabel}
+                          {numDays <= 7 ? day.dateLabel : (index % 5 === 0 ? day.shortLabel : "")}
                         </text>
 
                         {/* Tooltip */}

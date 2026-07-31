@@ -129,6 +129,48 @@ const updatePaymentStatus = async (req, res, next) => {
   }
 };
 
+const updateOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { items } = req.body;
+
+    const order = await orderService.updateOrder(id, items);
+
+    res.status(200).json({
+      success: true,
+      message: "Order updated successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMyOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { items } = req.body;
+
+    const checkOrder = await orderService.getOrderById(req.user.id, id);
+    if (!checkOrder) {
+      return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+    }
+    if (checkOrder.status !== "PENDING") {
+      return res.status(400).json({ success: false, message: "Only pending orders can be updated" });
+    }
+
+    const order = await orderService.updateOrder(id, items);
+
+    res.status(200).json({
+      success: true,
+      message: "Order updated successfully",
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
@@ -138,4 +180,6 @@ module.exports = {
   getAdminOrderById,
   updateOrderStatus,
   updatePaymentStatus,
+  updateOrder,
+  updateMyOrder,
 };
