@@ -127,12 +127,7 @@ const verifyOtp = async (req, res, next) => {
       });
     }
 
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setRefreshTokenCookie(res, result.refreshToken);
 
     res.status(200).json({
       success: true,
