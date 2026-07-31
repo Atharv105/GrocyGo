@@ -22,17 +22,11 @@ const addToCart = async (userId, productId, quantity) => {
         throw new AppError("Insufficient stock", 400);
     }
 
-    //Find user's cart
-    let cart = await Cart.findOne({
+    // Find or create user's cart
+    const [cart] = await Cart.findOrCreate({
         where: { userId },
+        defaults: { userId }
     });
-
-    // Create cart if not exists
-    if (!cart) {
-        cart = await Cart.create({
-            userId,
-        });
-    }
 
     // Check if product already exists in cart
     const existingItem = await CartItem.findOne({

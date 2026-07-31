@@ -54,7 +54,7 @@ function AdminPickupSlots() {
       setOrdersLoading(true);
       const res = await orderService.getAllOrdersAdmin();
       if (res.success) {
-        setOrders(res.data || []);
+        setOrders(res.data?.orders || []);
       }
     } catch (err) {
       console.error("Failed to load orders:", err);

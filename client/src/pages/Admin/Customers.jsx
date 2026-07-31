@@ -17,7 +17,7 @@ function AdminCustomers() {
         // Fetch all orders
         const res = await orderService.getAllOrdersAdmin();
         if (res.success) {
-          const orders = res.data || [];
+          const orders = res.data?.orders || [];
           
           // Group by user
           const customerMap = {};

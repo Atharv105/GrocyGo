@@ -67,12 +67,12 @@ const cancelOrder = async (req, res, next) => {
 
 const getAllOrders = async (req, res, next) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const data = await orderService.getAllOrders(req.query);
 
     res.status(200).json({
       success: true,
       message: "Orders fetched successfully",
-      data: orders,
+      data: data,
     });
   } catch (error) {
     next(error);

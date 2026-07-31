@@ -20,8 +20,8 @@ const User = sequelize.define(
       allowNull: false,
       unique: true,
       validate: {
-        len: [10, 10]
-      }
+        is: /^[6-9]\d{9}$/,
+      },
     },
 
     password: {
@@ -36,6 +36,7 @@ const User = sequelize.define(
 
     role: {
       type: DataTypes.ENUM("CUSTOMER", "ADMIN"),
+      allowNull: false,
       defaultValue: "CUSTOMER",
     },
   },

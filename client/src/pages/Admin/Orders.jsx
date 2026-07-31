@@ -54,7 +54,7 @@ function AdminOrders() {
       setError(null);
       const res = await orderService.getAllOrdersAdmin();
       if (res.success) {
-        setOrders(res.data || []);
+        setOrders(res.data?.orders || []);
       } else {
         setError(res.message || "Failed to fetch orders");
       }
