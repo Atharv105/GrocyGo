@@ -152,6 +152,16 @@ function AdminOrders() {
       return;
     }
 
+    // Confirmation popup for marking payment status as FAILED
+    if (newPaymentStatus === "FAILED") {
+      const confirmFailed = window.confirm("Are you sure you want to mark this order payment as FAILED?");
+      if (!confirmFailed) {
+        // Force state reload to revert the select element selection
+        setOrders(prev => [...prev]);
+        return;
+      }
+    }
+
     try {
       setStatusUpdateLoading(prev => ({ ...prev, [`pay-${orderId}`]: true }));
       const res = await orderService.updateOrderPaymentStatus(orderId, newPaymentStatus);
