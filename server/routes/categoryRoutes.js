@@ -13,11 +13,16 @@ const {
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 
+const { createCategoryValidation, updateCategoryValidation } = require("../validations/categoryValidation");
+const validationMiddleware = require("../middleware/validationMiddleware");
+
 // Create Category
 router.post(
     "/",
     authMiddleware,
     adminMiddleware,
+    createCategoryValidation,
+    validationMiddleware,
     createCategory
 );
 
@@ -32,6 +37,8 @@ router.put(
     "/:id",
     authMiddleware,
     adminMiddleware,
+    updateCategoryValidation,
+    validationMiddleware,
     updateCategory
 );
 

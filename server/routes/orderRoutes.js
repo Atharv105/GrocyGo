@@ -14,8 +14,11 @@ const { checkout,
     updatePaymentStatus
 } = require("../controllers/orderController");
 
+const { checkoutValidation } = require("../validations/orderValidation");
+const validationMiddleware = require("../middleware/validationMiddleware");
+
 // CUSTOMER ROUTES
-router.post("/checkout", authMiddleware, checkout);
+router.post("/checkout", authMiddleware, checkoutValidation, validationMiddleware, checkout);
 router.get("/my-orders", authMiddleware, getMyOrders);
 router.get("/:id", authMiddleware, getOrderById);
 router.put("/:id/cancel", authMiddleware, cancelOrder);

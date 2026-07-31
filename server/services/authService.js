@@ -197,13 +197,16 @@ const sendOtp = async (mobile) => {
     },
   });
 
+  const OTP_EXPIRY_MINS = parseInt(process.env.OTP_EXPIRY_MINS, 10) || 5;
+  const OTP_RESEND_COOLDOWN_SECS = parseInt(process.env.OTP_RESEND_COOLDOWN_SECS, 10) || 60;
+
   if (existingOtp) {
     const seconds =
       (Date.now() - new Date(existingOtp.lastSentAt).getTime()) / 1000;
 
-    if (seconds < 60) {
+    if (seconds < OTP_RESEND_COOLDOWN_SECS) {
       throw new AppError(
-        `Please wait ${Math.ceil(60 - seconds)} seconds before requesting another OTP.`,
+        `Please wait ${Math.ceil(OTP_RESEND_COOLDOWN_SECS - seconds)} seconds before requesting another OTP.`,
         429
       );
     }
@@ -222,7 +225,7 @@ const sendOtp = async (mobile) => {
   await Otp.upsert({
     mobile,
     otp: hashedOtp,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    expiresAt: new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000),
     attempts: 0,
     lastSentAt: new Date(),
   });

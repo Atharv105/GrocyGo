@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const logger = require("./utils/logger");
+const { generalLimiter } = require("./middleware/rateLimiter");
 
 const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
@@ -62,6 +63,9 @@ app.get("/", (req, res) => {
     message: "GrocyGo Backend Running Successfully 🚀",
   });
 });
+
+// Apply General Rate Limiter to all API routes
+app.use("/api", generalLimiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
