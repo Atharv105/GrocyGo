@@ -57,6 +57,13 @@ const getAllProducts = async (query) => {
     where.categoryId = categoryId;
   }
 
+  // Filter by stock
+  if (query.inStock === "true") {
+    where.stock = {
+      [Op.gt]: 0,
+    };
+  }
+
   // Filter by price
   if (minPrice || maxPrice) {
     where.price = {};

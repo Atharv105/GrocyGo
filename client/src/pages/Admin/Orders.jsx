@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { 
-  ClipboardList, 
-  Eye, 
-  X, 
-  AlertTriangle, 
-  Calendar, 
-  DollarSign, 
+import {
+  ClipboardList,
+  Eye,
+  X,
+  AlertTriangle,
+  Calendar,
+  DollarSign,
   ShoppingBag,
   Info,
   CheckCircle,
@@ -19,6 +19,7 @@ import {
   CreditCard
 } from "lucide-react";
 import * as orderService from "../../services/orderService";
+import API from "../../services/api";
 
 const formatTime12h = (timeStr) => {
   if (!timeStr) return "";
@@ -38,6 +39,8 @@ function AdminOrders() {
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("ALL");
 
   // Detail Modal State
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -47,6 +50,18 @@ function AdminOrders() {
 
   // Status updates in modal/table
   const [statusUpdateLoading, setStatusUpdateLoading] = useState({});
+
+  // Editing Items State
+  const [isEditingItems, setIsEditingItems] = useState(false);
+  const [editItemsState, setEditItemsState] = useState([]);
+  const [allProductsForEdit, setAllProductsForEdit] = useState([]);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [showAddProductDropdown, setShowAddProductDropdown] = useState(false);
+  const [editItemsError, setEditItemsError] = useState(null);
+  const [editItemsSaving, setEditItemsSaving] = useState(false);
+  const [showOrderSearchSuggestions, setShowOrderSearchSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [activeAddProductIndex, setActiveAddProductIndex] = useState(-1);
 
   const fetchOrders = async () => {
     try {
@@ -190,6 +205,98 @@ function AdminOrders() {
     }
   };
 
+  const loadProductsForEdit = async () => {
+    try {
+      const res = await API.get("/products?limit=1000");
+      if (res.data?.success) {
+        setAllProductsForEdit(res.data.data?.products || []);
+      }
+    } catch (err) {
+      console.error("Failed to load products for editing:", err);
+    }
+  };
+
+  const startEditing = () => {
+    setEditItemsState(
+      orderDetails.OrderItems.map((item) => ({
+        id: item.id,
+        productId: item.productId || item.Product?.id,
+        Product: item.Product,
+        quantity: item.quantity,
+        price: item.price,
+      }))
+    );
+    setIsEditingItems(true);
+    setEditItemsError(null);
+    loadProductsForEdit();
+  };
+
+  const handleEditQtyChange = (productId, newQty) => {
+    if (newQty <= 0) {
+      setEditItemsState((prev) => prev.filter((item) => item.productId !== productId));
+    } else {
+      setEditItemsState((prev) =>
+        prev.map((item) => (item.productId === productId ? { ...item, quantity: newQty } : item))
+      );
+    }
+  };
+
+  const handleAddNewItem = (product) => {
+    const exists = editItemsState.find((item) => item.productId === product.id);
+    if (exists) {
+      handleEditQtyChange(product.id, exists.quantity + 1);
+    } else {
+      setEditItemsState((prev) => [
+        ...prev,
+        {
+          id: `new-${Date.now()}`,
+          productId: product.id,
+          Product: product,
+          quantity: 1,
+          price: product.price,
+        },
+      ]);
+    }
+    setShowAddProductDropdown(false);
+    setProductSearchQuery("");
+  };
+
+  const handleSaveEditedItems = async () => {
+    if (editItemsState.length === 0) {
+      setEditItemsError("Order must have at least one item. Cancel the order instead if needed.");
+      return;
+    }
+    try {
+      setEditItemsSaving(true);
+      setEditItemsError(null);
+
+      const payload = editItemsState.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      }));
+
+      const res = await orderService.updateOrderAdmin(orderDetails.id, payload);
+      if (res.success) {
+        setOrderDetails(res.data);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderDetails.id
+              ? { ...o, totalAmount: res.data.totalAmount, OrderItems: res.data.OrderItems }
+              : o
+          )
+        );
+        setIsEditingItems(false);
+      } else {
+        setEditItemsError(res.message || "Failed to update order");
+      }
+    } catch (err) {
+      console.error(err);
+      setEditItemsError(err.response?.data?.message || err.message || "Failed to update order");
+    } finally {
+      setEditItemsSaving(false);
+    }
+  };
+
   // Status Badge Helper
   const getStatusSelectStyle = (status) => {
     switch (status) {
@@ -231,15 +338,38 @@ function AdminOrders() {
   // Filters & Search logic
   const filteredOrders = orders.filter((order) => {
     const matchesTab = activeTab === "ALL" || order.status === activeTab;
-    
+
+    const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;
+
+    let matchesDate = true;
+    if (dateFilter !== "ALL") {
+      const orderDate = new Date(order.createdAt);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === "TODAY") {
+        matchesDate = orderDate >= today;
+      } else if (dateFilter === "YESTERDAY") {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        matchesDate = orderDate >= yesterday && orderDate < today;
+      } else if (dateFilter === "LAST_7_DAYS") {
+        const last7 = new Date();
+        last7.setDate(last7.getDate() - 7);
+        last7.setHours(0, 0, 0, 0);
+        matchesDate = orderDate >= last7;
+      }
+    }
+
     const term = searchTerm.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       order.id.toString().includes(term) ||
       (order.User?.name || "").toLowerCase().includes(term) ||
       (order.User?.mobile || "").includes(term) ||
       (order.User?.email || "").toLowerCase().includes(term);
 
-    return matchesTab && matchesSearch;
+    return matchesTab && matchesPayment && matchesDate && matchesSearch;
   });
 
   if (loading) {
@@ -329,9 +459,96 @@ function AdminOrders() {
               type="text"
               placeholder="Search by ID, name, mobile..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowOrderSearchSuggestions(true);
+                setActiveSuggestionIndex(-1);
+              }}
+              onFocus={() => setShowOrderSearchSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowOrderSearchSuggestions(false), 200)}
+              onKeyDown={(e) => {
+                const suggestions = orders
+                  .filter(o => 
+                    o.id.toString().includes(searchTerm) || 
+                    (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (o.User?.mobile || "").includes(searchTerm)
+                  )
+                  .slice(0, 5);
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                } else if (e.key === "Enter") {
+                  if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                    e.preventDefault();
+                    const selected = suggestions[activeSuggestionIndex];
+                    let label = `Order #${selected.id}`;
+                    if ((selected.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
+                      label = selected.User.name;
+                    } else if ((selected.User?.mobile || "").includes(searchTerm)) {
+                      label = selected.User.mobile;
+                    }
+                    const fillValue = label.startsWith("Order #") ? selected.id.toString() : label;
+                    setSearchTerm(fillValue);
+                    setShowOrderSearchSuggestions(false);
+                  }
+                } else if (e.key === "Escape") {
+                  setShowOrderSearchSuggestions(false);
+                }
+              }}
               className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
             />
+            {showOrderSearchSuggestions && searchTerm && orders.filter(o => 
+              o.id.toString().includes(searchTerm) || 
+              (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (o.User?.mobile || "").includes(searchTerm)
+            ).length > 0 && (
+              <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
+                {orders
+                  .filter(o => 
+                    o.id.toString().includes(searchTerm) || 
+                    (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (o.User?.mobile || "").includes(searchTerm)
+                  )
+                  .slice(0, 5)
+                  .map((order, idx) => {
+                    let label = `Order #${order.id}`;
+                    let subLabel = order.User?.name || "Unknown Customer";
+                    if ((order.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
+                      label = order.User.name;
+                      subLabel = `Order #${order.id} • ${order.User.mobile || ""}`;
+                    } else if ((order.User?.mobile || "").includes(searchTerm)) {
+                      label = order.User.mobile;
+                      subLabel = `Order #${order.id} • ${order.User.name}`;
+                    }
+
+                    const fillValue = label.startsWith("Order #") ? order.id.toString() : label;
+
+                    return (
+                      <button
+                        key={order.id}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSearchTerm(fillValue);
+                          setShowOrderSearchSuggestions(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                          idx === activeSuggestionIndex ? "bg-green-100 text-green-950 font-semibold" : "hover:bg-green-50/50"
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span>{label}</span>
+                          <span className="text-[10px] text-gray-400 font-semibold">{subLabel}</span>
+                        </div>
+                        <span className="text-green-700 font-bold text-[10px]">₹{parseFloat(order.totalAmount || 0).toFixed(2)}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
           </div>
 
           {/* Filter Tabs */}
@@ -340,15 +557,45 @@ function AdminOrders() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
-                  activeTab === tab
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition ${activeTab === tab
                     ? "bg-green-600 text-white shadow-sm"
                     : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Dropdown Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Status</label>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500 transition text-gray-700 cursor-pointer animate-none"
+            >
+              <option value="ALL">All Payments</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Date</label>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500 transition text-gray-700 cursor-pointer animate-none"
+            >
+              <option value="ALL">All Dates</option>
+              <option value="TODAY">Today</option>
+              <option value="YESTERDAY">Yesterday</option>
+              <option value="LAST_7_DAYS">Last 7 Days</option>
+            </select>
           </div>
         </div>
 
@@ -470,7 +717,7 @@ function AdminOrders() {
                 <p className="text-xs text-gray-400 mt-0.5">Line items, Customer contact, and Status update actions</p>
               </div>
               <button
-                onClick={() => setSelectedOrderId(null)}
+                onClick={() => { setSelectedOrderId(null); setIsEditingItems(false); }}
                 className="p-1.5 rounded-xl hover:bg-gray-200 transition text-gray-500"
               >
                 <X size={20} />
@@ -497,50 +744,232 @@ function AdminOrders() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Left Column: Items */}
                   <div className="md:col-span-2 space-y-4">
-                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
-                      <ShoppingBag size={18} className="text-green-600" />
-                      Items Summary ({orderDetails.OrderItems?.length || 0})
-                    </h4>
-                    <div className="space-y-3">
-                      {orderDetails.OrderItems?.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className="flex items-center gap-4 p-3 bg-white border border-gray-100 rounded-2xl shadow-sm"
-                        >
-                          {/* Product Image */}
-                          <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-orange-50 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-gray-100 shadow-sm">
-                            {item.Product?.image && item.Product.image.startsWith("http") ? (
-                              <img src={item.Product.image} className="w-full h-full object-cover" alt={item.Product?.name} />
-                            ) : (
-                              item.Product?.image || "📦"
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <h5 className="font-bold text-gray-800 text-sm truncate">
-                              {item.Product?.name || "Product Unavailable"}
-                            </h5>
-                            <p className="text-xs text-gray-400">{item.Product?.unit || ""}</p>
-                          </div>
-
-                          {/* Calculation */}
-                          <div className="text-right shrink-0">
-                            <p className="text-sm font-bold text-gray-800">
-                              ₹{parseFloat(item.subtotal || 0).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              ₹{parseFloat(item.price || 0).toFixed(2)} × {item.quantity}
-                            </p>
-                          </div>
+                    {!isEditingItems ? (
+                      <>
+                        <div className="flex items-center justify-between gap-4">
+                          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                            <ShoppingBag size={18} className="text-green-600" />
+                            Items Summary ({orderDetails.OrderItems?.length || 0})
+                          </h4>
+                          {orderDetails.status !== "COMPLETED" && orderDetails.status !== "CANCELLED" && (
+                            <button
+                              type="button"
+                              onClick={startEditing}
+                              className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-xl font-bold border border-green-200 transition"
+                            >
+                              Edit Items
+                            </button>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                        <div className="space-y-3">
+                          {orderDetails.OrderItems?.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-4 p-3 bg-white border border-gray-100 rounded-2xl shadow-sm"
+                            >
+                              {/* Product Image */}
+                              <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-orange-50 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-gray-100 shadow-sm">
+                                {item.Product?.image && item.Product.image.startsWith("http") ? (
+                                  <img src={item.Product.image} className="w-full h-full object-cover" alt={item.Product?.name} />
+                                ) : (
+                                  item.Product?.image || "📦"
+                                )}
+                              </div>
 
-                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                      <span className="font-bold text-gray-700">Total Bill:</span>
-                      <span className="text-xl font-extrabold text-green-700">₹{parseFloat(orderDetails.totalAmount || 0).toFixed(2)}</span>
-                    </div>
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-bold text-gray-800 text-sm truncate">
+                                  {item.Product?.name || "Product Unavailable"}
+                                </h5>
+                                <p className="text-xs text-gray-400">{item.Product?.unit || ""}</p>
+                              </div>
+
+                              {/* Calculation */}
+                              <div className="text-right shrink-0">
+                                <p className="text-sm font-bold text-gray-800">
+                                  ₹{parseFloat(item.subtotal || 0).toFixed(2)}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  ₹{parseFloat(item.price || 0).toFixed(2)} × {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                          <span className="font-bold text-gray-700">Total Bill:</span>
+                          <span className="text-xl font-extrabold text-green-700">₹{parseFloat(orderDetails.totalAmount || 0).toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                          <ShoppingBag size={18} className="text-green-600" />
+                          Edit Items ({editItemsState.length})
+                        </h4>
+                        <div className="space-y-3">
+                          {editItemsState.map((item) => (
+                            <div
+                              key={item.id || item.productId}
+                              className="flex items-center gap-4 p-3 bg-white border border-gray-100 rounded-2xl shadow-sm"
+                            >
+                              {/* Product Image */}
+                              <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-orange-50 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-gray-100 shadow-sm">
+                                {item.Product?.image && item.Product.image.startsWith("http") ? (
+                                  <img src={item.Product.image} className="w-full h-full object-cover" alt={item.Product?.name} />
+                                ) : (
+                                  item.Product?.image || "📦"
+                                )}
+                              </div>
+
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-bold text-gray-800 text-sm truncate">
+                                  {item.Product?.name || "Product Unavailable"}
+                                </h5>
+                                <p className="text-xs text-gray-400">{item.Product?.unit || ""}</p>
+                                <p className="text-xs font-semibold text-gray-500 mt-0.5">₹{parseFloat(item.price || 0).toFixed(2)} each</p>
+                              </div>
+
+                              {/* Quantity control */}
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditQtyChange(item.productId, item.quantity - 1)}
+                                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center font-bold text-gray-600 transition"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center text-sm font-bold text-gray-800">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditQtyChange(item.productId, item.quantity + 1)}
+                                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center font-bold text-gray-600 transition"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => handleEditQtyChange(item.productId, 0)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition border border-transparent hover:border-red-100 shrink-0"
+                              >
+                                <X size={16} className="text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add Product Section */}
+                        <div className="relative border border-dashed border-gray-200 rounded-2xl p-4 bg-gray-50/50">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Add product to order</label>
+                          <input
+                            type="text"
+                            placeholder="Search product to add..."
+                            value={productSearchQuery}
+                            onChange={(e) => {
+                              setProductSearchQuery(e.target.value);
+                              setShowAddProductDropdown(true);
+                              setActiveAddProductIndex(-1);
+                            }}
+                            onFocus={() => setShowAddProductDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowAddProductDropdown(false), 200)}
+                            onKeyDown={(e) => {
+                              const suggestions = allProductsForEdit
+                                .filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()) && p.isActive && p.stock > 0)
+                                .slice(0, 5);
+                              if (e.key === "ArrowDown") {
+                                e.preventDefault();
+                                setActiveAddProductIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                              } else if (e.key === "ArrowUp") {
+                                e.preventDefault();
+                                setActiveAddProductIndex(prev => Math.max(prev - 1, -1));
+                              } else if (e.key === "Enter") {
+                                if (activeAddProductIndex >= 0 && suggestions[activeAddProductIndex]) {
+                                  e.preventDefault();
+                                  handleAddNewItem(suggestions[activeAddProductIndex]);
+                                  setProductSearchQuery("");
+                                  setShowAddProductDropdown(false);
+                                  setActiveAddProductIndex(-1);
+                                }
+                              } else if (e.key === "Escape") {
+                                setShowAddProductDropdown(false);
+                              }
+                            }}
+                            className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3 text-xs outline-none focus:border-green-500 transition"
+                          />
+                          {showAddProductDropdown && productSearchQuery && (
+                            <div className="absolute left-4 right-4 mt-1 bg-white border border-gray-100 rounded-xl shadow-lg max-h-48 overflow-y-auto z-10 divide-y divide-gray-50">
+                              {allProductsForEdit
+                                .filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()) && p.isActive && p.stock > 0)
+                                .slice(0, 5)
+                                .map((product, idx) => (
+                                  <button
+                                    key={product.id}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      handleAddNewItem(product);
+                                      setProductSearchQuery("");
+                                      setShowAddProductDropdown(false);
+                                      setActiveAddProductIndex(-1);
+                                    }}
+                                    className={`w-full text-left px-3 py-2 text-xs transition flex items-center justify-between ${
+                                      idx === activeAddProductIndex ? "bg-green-100 text-green-950 font-semibold" : "hover:bg-green-50/50"
+                                    }`}
+                                  >
+                                    <div>
+                                      <span className="font-bold text-gray-800">{product.name}</span>
+                                      <span className="text-gray-400 ml-1.5">({product.unit})</span>
+                                    </div>
+                                    <span className="font-semibold text-green-700">₹{parseFloat(product.price).toFixed(2)}</span>
+                                  </button>
+                                ))}
+                              {allProductsForEdit.filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()) && p.isActive && p.stock > 0).length === 0 && (
+                                <div className="p-3 text-xs text-gray-400 text-center italic">No in-stock products match search</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {editItemsError && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-semibold">
+                            {editItemsError}
+                          </div>
+                        )}
+
+                        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                          <span className="font-bold text-gray-700">Estimated Total:</span>
+                          <span className="text-xl font-extrabold text-green-700">₹{editItemsState.reduce((sum, item) => sum + parseFloat(item.price || 0) * item.quantity, 0).toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3 justify-end pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingItems(false)}
+                            className="px-4 py-2 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveEditedItems}
+                            disabled={editItemsSaving}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
+                          >
+                            {editItemsSaving ? (
+                              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : null}
+                            Save Changes
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Right Column: Customer & Status */}

@@ -21,6 +21,22 @@ function Products() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // Suggestions State
+  const [allProductsForSuggestions, setAllProductsForSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const fetchAllProductsForSuggestions = async () => {
+    try {
+      const res = await API.get("/products?limit=1000&includeInactive=true");
+      if (res.data?.success) {
+        setAllProductsForSuggestions(res.data.data?.products || []);
+      }
+    } catch (err) {
+      console.error("Failed to load products for suggestions:", err);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -63,6 +79,7 @@ function Products() {
 
   useEffect(() => {
     fetchCategories();
+    fetchAllProductsForSuggestions();
   }, []);
 
   const handleSearchSubmit = (e) => {
@@ -93,6 +110,12 @@ function Products() {
     }
   };
 
+  const suggestions = search
+    ? allProductsForSuggestions
+        .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+        .slice(0, 5)
+    : [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -112,17 +135,68 @@ function Products() {
 
       {/* Filters & Search */}
       <div className="bg-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-        <form onSubmit={handleSearchSubmit} className="flex w-full md:w-96 gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
-            className="flex-1 border px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
-          />
+        <form onSubmit={handleSearchSubmit} className="flex w-full md:w-96 gap-2 relative">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setShowSuggestions(true);
+                setActiveSuggestionIndex(-1);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                } else if (e.key === "Enter") {
+                  if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                    e.preventDefault();
+                    const selected = suggestions[activeSuggestionIndex];
+                    setSearch(selected.name);
+                    setShowSuggestions(false);
+                    setPage(1);
+                    setTimeout(() => fetchProducts(), 0);
+                  }
+                } else if (e.key === "Escape") {
+                  setShowSuggestions(false);
+                }
+              }}
+              placeholder="Search products..."
+              className="w-full border px-4 py-2.5 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
+                {suggestions.map((p, idx) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearch(p.name);
+                      setShowSuggestions(false);
+                      setPage(1);
+                      setTimeout(() => fetchProducts(), 0);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                      idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
+                    }`}
+                  >
+                    <span>{p.name}</span>
+                    <span className="text-green-700 font-bold">₹{parseFloat(p.price).toFixed(2)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             type="submit"
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-semibold transition"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-semibold transition shrink-0 h-[42px]"
           >
             Search
           </button>
