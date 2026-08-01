@@ -160,9 +160,14 @@ const deleteProduct = async(id) => {
     if(!product){
         throw new AppError("Product not found",404);
     }
-    await product.update({
-        isActive : false,
-    });
+    try {
+        await product.destroy();
+    } catch (error) {
+        if (error.name === "SequelizeForeignKeyConstraintError") {
+            throw new AppError("Cannot delete product because it has been ordered in customer transactions. Please deactivate it instead.", 400);
+        }
+        throw error;
+    }
     return;
 }
 
