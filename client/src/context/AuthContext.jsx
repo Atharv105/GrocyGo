@@ -33,25 +33,44 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const loadUser = async () => {
-      const token = sessionStorage.getItem("token");
+      let token = sessionStorage.getItem("token");
+
       if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await API.get("/auth/profile");
-        if (res.data.success) {
-          setUser(res.data.user);
-          sessionStorage.setItem("user", JSON.stringify(res.data.user));
-        } else {
-          logout();
+        try {
+          const res = await API.post("/auth/refresh");
+          if (res.data.success) {
+            token = res.data.data.accessToken;
+            sessionStorage.setItem("token", token);
+          }
+        } catch (err) {
+          console.error("Failed to auto-login using refresh token on mount", err);
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("user");
+          setUser(null);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error("Failed to load user profile", err);
-        logout();
-      } finally {
-        setLoading(false);
       }
+
+      if (token) {
+        try {
+          const res = await API.get("/auth/profile");
+          if (res.data.success) {
+            setUser(res.data.user);
+            sessionStorage.setItem("user", JSON.stringify(res.data.user));
+          } else {
+            sessionStorage.removeItem("token");
+            sessionStorage.removeItem("user");
+            setUser(null);
+          }
+        } catch (err) {
+          console.error("Failed to load user profile", err);
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("user");
+          setUser(null);
+        }
+      }
+      setLoading(false);
     };
     loadUser();
   }, []);

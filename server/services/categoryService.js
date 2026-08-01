@@ -83,7 +83,7 @@ const updateCategory = async (id, categoryData) => {
   return category;
 };
 
-// Soft Delete Category
+// Hard Delete Category
 const deleteCategory = async (id) => {
   const category = await Category.findByPk(id);
 
@@ -91,19 +91,24 @@ const deleteCategory = async (id) => {
     throw new AppError("Category not found", 404);
   }
 
-  await category.update({
-    isActive: false,
-  });
-
-  // Automatically deactivate all products in this category
-  await Product.update(
-    { isActive: false },
-    {
+  try {
+    // Automatically delete all products in this category permanently
+    await Product.destroy({
       where: {
         categoryId: id,
       },
+    });
+
+    await category.destroy();
+  } catch (error) {
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      throw new AppError(
+        "Cannot delete category because some of its products are referenced in customer orders. Please deactivate the category instead.",
+        400
+      );
     }
-  );
+    throw error;
+  }
 };
 
 module.exports = {

@@ -98,10 +98,10 @@ function MyProfile() {
                   <h3 className="font-semibold">
                     {user.createdAt
                       ? new Date(user.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
                       : "N/A"}
                   </h3>
                 </div>

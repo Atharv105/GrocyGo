@@ -16,7 +16,8 @@ import {
   Phone,
   ArrowRight,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Receipt
 } from "lucide-react";
 import * as orderService from "../../services/orderService";
 import API from "../../services/api";
@@ -47,6 +48,39 @@ function AdminOrders() {
   const [orderDetails, setOrderDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
+
+  // Bill Modal State
+  const [showBillOrderId, setShowBillOrderId] = useState(null);
+  const [billDetails, setBillDetails] = useState(null);
+  const [billLoading, setBillLoading] = useState(false);
+  const [billError, setBillError] = useState(null);
+
+  // Fetch Bill Details when showBillOrderId changes
+  useEffect(() => {
+    const fetchBillDetails = async () => {
+      if (!showBillOrderId) {
+        setBillDetails(null);
+        return;
+      }
+      try {
+        setBillLoading(true);
+        setBillError(null);
+        const res = await orderService.getOrderByIdAdmin(showBillOrderId);
+        if (res.success) {
+          setBillDetails(res.data);
+        } else {
+          setBillError(res.message || "Failed to load bill details");
+        }
+      } catch (err) {
+        console.error(err);
+        setBillError(err.response?.data?.message || err.message || "Could not fetch bill details.");
+      } finally {
+        setBillLoading(false);
+      }
+    };
+
+    fetchBillDetails();
+  }, [showBillOrderId]);
 
   // Status updates in modal/table
   const [statusUpdateLoading, setStatusUpdateLoading] = useState({});
@@ -203,6 +237,132 @@ function AdminOrders() {
     } finally {
       setStatusUpdateLoading(prev => ({ ...prev, [`pay-${orderId}`]: false }));
     }
+  };
+
+  const handlePrint = (billDetails) => {
+    if (!billDetails) return;
+    const printWindow = window.open("", "_blank", "width=800,height=900");
+    if (!printWindow) {
+      alert("Please allow popups to print invoices");
+      return;
+    }
+    
+    // Format items table rows
+    const itemRows = (billDetails.OrderItems || []).map((item, idx) => `
+      <tr style="font-size: 12px; border-bottom: 1px solid #f3f4f6;">
+        <td style="padding: 10px 0; color: #9ca3af; text-align: left;">${idx + 1}</td>
+        <td style="padding: 10px 0; font-family: sans-serif; font-weight: 500; color: #111827; text-align: left;">
+          <div>${item.Product?.name || "Product"}</div>
+          <div style="font-size: 10px; color: #9ca3af; font-family: monospace; margin-top: 2px;">${item.Product?.unit || ""}</div>
+        </td>
+        <td style="padding: 10px 0; text-align: right; color: #4b5563;">₹${parseFloat(item.price || 0).toFixed(2)}</td>
+        <td style="padding: 10px 0; text-align: center; color: #4b5563;">${item.quantity}</td>
+        <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #111827;">₹${parseFloat(item.subtotal || 0).toFixed(2)}</td>
+      </tr>
+    `).join("");
+
+    const totalItems = (billDetails.OrderItems || []).reduce((sum, item) => sum + item.quantity, 0);
+    const slotDateStr = billDetails.Slot ? new Date(billDetails.Slot.date).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short"
+    }) : "";
+    const slotTimeStr = billDetails.Slot ? `${formatTime12h(billDetails.Slot.startTime)} - ${formatTime12h(billDetails.Slot.endTime)}` : "";
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - GrocyGo</title>
+          <style>
+            body {
+              font-family: monospace;
+              padding: 20px;
+              color: #1f2937;
+              background: #fff;
+              max-width: 450px;
+              margin: 0 auto;
+            }
+            .flex { display: flex; }
+            .justify-between { justify-content: space-between; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .font-extrabold { font-weight: 800; }
+            .text-xs { font-size: 12px; }
+            .text-sm { font-size: 14px; }
+            .text-base { font-size: 16px; }
+            .text-2xl { font-size: 24px; }
+            .text-right { text-align: right; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; font-family: sans-serif; font-size: 10px; text-transform: uppercase; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center; border-bottom: 1px dashed #d1d5db; padding-bottom: 16px;">
+            <h2 style="font-size: 24px; font-weight: 800; margin: 0; font-family: sans-serif; color: #111827;">GrocyGo</h2>
+            <p style="font-size: 10px; color: #6b7280; margin: 4px 0 0 0; font-family: sans-serif;">Premium Online Grocery Store</p>
+            <p style="font-size: 10px; color: #6b7280; margin: 4px 0 0 0;">Contact: +91 98765 43210 • support@grocygo.com</p>
+            <p style="font-size: 10px; color: #6b7280; margin: 2px 0 0 0;">GSTIN: 27AAAAA1111A1Z1</p>
+          </div>
+
+          <div style="padding: 16px 0; border-bottom: 1px dashed #d1d5db;">
+            <div class="flex justify-between text-xs"><span style="color: #6b7280;">Invoice No:</span><span class="font-bold">INV-${billDetails.id}</span></div>
+            <div class="flex justify-between text-xs" style="margin-top: 4px;"><span style="color: #6b7280;">Date/Time:</span><span>${new Date(billDetails.createdAt).toLocaleString("en-IN")}</span></div>
+            <div class="flex justify-between text-xs" style="margin-top: 4px;"><span style="color: #6b7280;">Payment Method:</span><span class="font-bold">${billDetails.paymentMethod}</span></div>
+            <div class="flex justify-between text-xs" style="margin-top: 4px;"><span style="color: #6b7280;">Payment Status:</span><span class="font-bold">${billDetails.paymentStatus}</span></div>
+          </div>
+
+          <div style="padding: 16px 0; border-bottom: 1px dashed #d1d5db;">
+            <div style="font-weight: bold; font-family: sans-serif; font-size: 10px; text-transform: uppercase; color: #111827; letter-spacing: 0.5px; padding-bottom: 4px;">Customer Details</div>
+            <div class="flex justify-between text-xs"><span style="color: #6b7280;">Name:</span><span class="font-semibold">${billDetails.User?.name || "Customer"}</span></div>
+            <div class="flex justify-between text-xs" style="margin-top: 4px;"><span style="color: #6b7280;">Mobile:</span><span>${billDetails.User?.mobile || "N/A"}</span></div>
+            ${billDetails.Slot ? `
+              <div class="flex justify-between text-xs" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #f3f4f6;">
+                <span style="color: #6b7280;">Pickup Slot:</span>
+                <span style="text-align: right;">${slotDateStr} • ${slotTimeStr}</span>
+              </div>
+            ` : ""}
+          </div>
+
+          <div style="padding: 16px 0;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align: left; width: 30px;">#</th>
+                  <th style="text-align: left;">Item</th>
+                  <th style="text-align: right; width: 70px;">Price</th>
+                  <th style="text-align: center; width: 50px;">Qty</th>
+                  <th style="text-align: right; width: 80px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemRows}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding-top: 16px; border-top: 1px dashed #d1d5db;">
+            <div class="flex justify-between text-xs" style="color: #6b7280;"><span>Total Items:</span><span style="font-weight: bold; color: #111827;">${totalItems}</span></div>
+            <div class="flex justify-between text-xs" style="color: #6b7280; margin-top: 4px;"><span>Subtotal:</span><span style="color: #111827;">₹${parseFloat(billDetails.totalAmount || 0).toFixed(2)}</span></div>
+            <div class="flex justify-between text-base font-extrabold" style="margin-top: 8px; border-top: 3px double #d1d5db; border-bottom: 3px double #d1d5db; padding: 8px 0; color: #111827;">
+              <span>Grand Total:</span>
+              <span style="color: #15803d;">₹${parseFloat(billDetails.totalAmount || 0).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px dashed #d1d5db; color: #9ca3af; font-size: 10px; font-family: sans-serif;">
+            <p style="font-weight: bold; color: #4b5563; margin: 0;">Thank you for shopping with GrocyGo!</p>
+            <p style="margin: 4px 0 0 0;">Please bring this copy for slot verification during pickup.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const loadProductsForEdit = async () => {
@@ -689,12 +849,20 @@ function AdminOrders() {
                       </select>
                     </td>
                     <td className="px-6 py-4 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => setSelectedOrderId(order.id)}
-                        className="inline-flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-gray-200"
-                      >
-                        <Eye size={14} /> View Details
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelectedOrderId(order.id)}
+                          className="inline-flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-gray-200"
+                        >
+                          <Eye size={14} /> View Details
+                        </button>
+                        <button
+                          onClick={() => setShowBillOrderId(order.id)}
+                          className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-xs font-bold transition border border-green-200"
+                        >
+                          <Receipt size={14} /> Bill
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1074,13 +1242,189 @@ function AdminOrders() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              {orderDetails && (
+                <button
+                  onClick={() => setShowBillOrderId(orderDetails.id)}
+                  className="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition animate-none"
+                >
+                  <Receipt size={14} /> Print Bill
+                </button>
+              )}
               <button
-                onClick={() => setSelectedOrderId(null)}
-                className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition"
+                onClick={() => { setSelectedOrderId(null); setIsEditingItems(false); }}
+                className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition"
               >
                 Close Details
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Preview & Print Modal */}
+      {showBillOrderId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn no-print">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] animate-scaleUp">
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gray-50 border-b border-gray-100 flex items-center justify-between no-print">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">
+                  Generate Bill
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">Preview and print checkout invoice</p>
+              </div>
+              <button
+                onClick={() => setShowBillOrderId(null)}
+                className="p-1.5 rounded-xl hover:bg-gray-200 transition text-gray-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content / Preview Area */}
+            <div className="p-8 overflow-y-auto flex-1 bg-gray-100/50 flex justify-center items-start">
+              {billLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                  <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-green-700 font-medium text-sm">Preparing invoice...</p>
+                </div>
+              )}
+
+              {billError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-center gap-2 w-full max-w-md">
+                  <AlertTriangle size={18} className="shrink-0" />
+                  <span>{billError}</span>
+                </div>
+              )}
+
+              {billDetails && (
+                <div 
+                  id="printable-bill"
+                  className="bg-white shadow-lg border border-gray-200 p-8 w-full max-w-lg rounded-2xl font-mono text-xs text-gray-800 h-fit"
+                >
+                  {/* Receipt Header */}
+                  <div className="text-center space-y-1.5 pb-6 border-b border-dashed border-gray-300 text-gray-800">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-gray-950 font-sans">GrocyGo</h2>
+                    <p className="text-[10px] text-gray-500 font-sans">Premium Online Grocery Store</p>
+                    <p className="text-[10px] text-gray-500">Contact: +91 98765 43210 • support@grocygo.com</p>
+                    <p className="text-[10px] text-gray-500">GSTIN: 27AAAAA1111A1Z1</p>
+                  </div>
+
+                  {/* Invoice Meta */}
+                  <div className="py-4 border-b border-dashed border-gray-300 space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Invoice No:</span>
+                      <span className="font-bold">INV-{billDetails.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Date/Time:</span>
+                      <span>{new Date(billDetails.createdAt).toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Payment Method:</span>
+                      <span className="font-bold">{billDetails.paymentMethod}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Payment Status:</span>
+                      <span className="font-bold">{billDetails.paymentStatus}</span>
+                    </div>
+                  </div>
+
+                  {/* Customer & Delivery */}
+                  <div className="py-4 border-b border-dashed border-gray-300 space-y-1">
+                    <div className="font-bold font-sans text-gray-905 uppercase tracking-wider text-[10px] pb-1">Customer Details</div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Name:</span>
+                      <span className="font-semibold">{billDetails.User?.name || "Customer"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-sans">Mobile:</span>
+                      <span>{billDetails.User?.mobile || "N/A"}</span>
+                    </div>
+                    {billDetails.Slot && (
+                      <div className="flex justify-between pt-1 border-t border-gray-100">
+                        <span className="text-gray-500 font-sans">Pickup Slot:</span>
+                        <span className="text-right">
+                          {new Date(billDetails.Slot.date).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short"
+                          })} • {formatTime12h(billDetails.Slot.startTime)} - {formatTime12h(billDetails.Slot.endTime)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Items List */}
+                  <div className="py-4">
+                    <table className="w-full text-left font-mono">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-gray-500 font-sans uppercase text-[10px]">
+                          <th className="pb-2 w-8">#</th>
+                          <th className="pb-2">Item</th>
+                          <th className="pb-2 text-right w-16">Price</th>
+                          <th className="pb-2 text-center w-12">Qty</th>
+                          <th className="pb-2 text-right w-20">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {billDetails.OrderItems?.map((item, idx) => (
+                          <tr key={item.id} className="text-xs">
+                            <td className="py-2.5 text-gray-400">{idx + 1}</td>
+                            <td className="py-2.5 pr-2 font-sans font-medium text-gray-900">
+                              <div>{item.Product?.name || "Product"}</div>
+                              <div className="text-[10px] text-gray-400 font-mono mt-0.5">{item.Product?.unit || ""}</div>
+                            </td>
+                            <td className="py-2.5 text-right font-mono text-gray-600">₹{parseFloat(item.price || 0).toFixed(2)}</td>
+                            <td className="py-2.5 text-center font-mono text-gray-600">{item.quantity}</td>
+                            <td className="py-2.5 text-right font-mono font-bold text-gray-900">₹{parseFloat(item.subtotal || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="pt-4 border-t border-dashed border-gray-300 space-y-2">
+                    <div className="flex justify-between font-sans text-gray-500">
+                      <span>Total Items:</span>
+                      <span className="font-mono text-gray-800 font-semibold">{billDetails.OrderItems?.reduce((sum, item) => sum + item.quantity, 0) || 0}</span>
+                    </div>
+                    <div className="flex justify-between font-sans text-gray-500">
+                      <span>Subtotal:</span>
+                      <span className="font-mono text-gray-800">₹{parseFloat(billDetails.totalAmount || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-sans text-base font-extrabold text-gray-950 pt-2 border-t border-double border-gray-300">
+                      <span>Grand Total:</span>
+                      <span className="font-mono text-green-700">₹{parseFloat(billDetails.totalAmount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Thank you message */}
+                  <div className="text-center font-sans space-y-1 pt-8 border-t border-dashed border-gray-300 text-gray-400 text-[10px]">
+                    <p className="font-bold text-gray-600">Thank you for shopping with GrocyGo!</p>
+                    <p>Please bring this copy for slot verification during pickup.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 no-print">
+              <button
+                onClick={() => setShowBillOrderId(null)}
+                className="px-5 py-2.5 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition"
+              >
+                Close
+              </button>
+              {billDetails && (
+                <button
+                  onClick={() => handlePrint(billDetails)}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <Receipt size={14} /> Print Bill
+                </button>
+              )}
             </div>
           </div>
         </div>
