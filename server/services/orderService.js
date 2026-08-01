@@ -9,6 +9,7 @@ const {
   Slot,
 } = require("../models");
 const AppError = require("../utils/AppError");
+const dayjs = require("dayjs");
 
 
 const checkout = async (userId, slotId, paymentMethod = "CASH") => {
@@ -42,9 +43,14 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
       throw new AppError("Invalid slot selected", 404);
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const now = dayjs();
+    const today = now.format("YYYY-MM-DD");
+    const currentTimeStr = now.format("HH:mm:ss");
 
-    if (slot.date < today) {
+    if (
+      slot.date < today ||
+      (slot.date === today && slot.startTime < currentTimeStr)
+    ) {
       throw new AppError("Selected slot has expired", 400);
     }
 

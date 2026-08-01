@@ -40,6 +40,7 @@ function AdminOrders() {
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
+  const [selectedDate, setSelectedDate] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("ALL");
 
@@ -484,19 +485,24 @@ function AdminOrders() {
   };
 
   // Statistics Calculations
+  // Filter by selected date (pickup slot date)
+  const dateFilteredOrders = selectedDate
+    ? orders.filter(order => order.Slot && order.Slot.date === selectedDate)
+    : orders;
+
   const stats = {
-    total: orders.length,
-    pending: orders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
-    confirmed: orders.filter(o => o.status === "CONFIRMED").length,
-    completed: orders.filter(o => o.status === "COMPLETED").length,
-    cancelled: orders.filter(o => o.status === "CANCELLED").length,
-    revenue: orders
+    total: dateFilteredOrders.length,
+    pending: dateFilteredOrders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
+    confirmed: dateFilteredOrders.filter(o => o.status === "CONFIRMED").length,
+    completed: dateFilteredOrders.filter(o => o.status === "COMPLETED").length,
+    cancelled: dateFilteredOrders.filter(o => o.status === "CANCELLED").length,
+    revenue: dateFilteredOrders
       .filter(o => o.paymentStatus === "PAID")
       .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0)
   };
 
   // Filters & Search logic
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = dateFilteredOrders.filter((order) => {
     const matchesTab = activeTab === "ALL" || order.status === activeTab;
 
     const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;
@@ -612,103 +618,126 @@ function AdminOrders() {
       {/* Toolbar & Filters */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by ID, name, mobile..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setShowOrderSearchSuggestions(true);
-                setActiveSuggestionIndex(-1);
-              }}
-              onFocus={() => setShowOrderSearchSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowOrderSearchSuggestions(false), 200)}
-              onKeyDown={(e) => {
-                const suggestions = orders
-                  .filter(o => 
-                    o.id.toString().includes(searchTerm) || 
-                    (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (o.User?.mobile || "").includes(searchTerm)
-                  )
-                  .slice(0, 5);
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
-                } else if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
-                } else if (e.key === "Enter") {
-                  if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+          {/* Search bar & Date Filter */}
+          <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-4 max-w-2xl">
+            <div className="relative flex-1 max-w-md">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by ID, name, mobile..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setShowOrderSearchSuggestions(true);
+                  setActiveSuggestionIndex(-1);
+                }}
+                onFocus={() => setShowOrderSearchSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowOrderSearchSuggestions(false), 200)}
+                onKeyDown={(e) => {
+                  const suggestions = orders
+                    .filter(o => 
+                      o.id.toString().includes(searchTerm) || 
+                      (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (o.User?.mobile || "").includes(searchTerm)
+                    )
+                    .slice(0, 5);
+                  if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    const selected = suggestions[activeSuggestionIndex];
-                    let label = `Order #${selected.id}`;
-                    if ((selected.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
-                      label = selected.User.name;
-                    } else if ((selected.User?.mobile || "").includes(searchTerm)) {
-                      label = selected.User.mobile;
+                    setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                  } else if (e.key === "Enter") {
+                    if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                      e.preventDefault();
+                      const selected = suggestions[activeSuggestionIndex];
+                      let label = `Order #${selected.id}`;
+                      if ((selected.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
+                        label = selected.User.name;
+                      } else if ((selected.User?.mobile || "").includes(searchTerm)) {
+                        label = selected.User.mobile;
+                      }
+                      const fillValue = label.startsWith("Order #") ? selected.id.toString() : label;
+                      setSearchTerm(fillValue);
+                      setShowOrderSearchSuggestions(false);
                     }
-                    const fillValue = label.startsWith("Order #") ? selected.id.toString() : label;
-                    setSearchTerm(fillValue);
+                  } else if (e.key === "Escape") {
                     setShowOrderSearchSuggestions(false);
                   }
-                } else if (e.key === "Escape") {
-                  setShowOrderSearchSuggestions(false);
-                }
-              }}
-              className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
-            />
-            {showOrderSearchSuggestions && searchTerm && orders.filter(o => 
-              o.id.toString().includes(searchTerm) || 
-              (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (o.User?.mobile || "").includes(searchTerm)
-            ).length > 0 && (
-              <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
-                {orders
-                  .filter(o => 
-                    o.id.toString().includes(searchTerm) || 
-                    (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (o.User?.mobile || "").includes(searchTerm)
-                  )
-                  .slice(0, 5)
-                  .map((order, idx) => {
-                    let label = `Order #${order.id}`;
-                    let subLabel = order.User?.name || "Unknown Customer";
-                    if ((order.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
-                      label = order.User.name;
-                      subLabel = `Order #${order.id} • ${order.User.mobile || ""}`;
-                    } else if ((order.User?.mobile || "").includes(searchTerm)) {
-                      label = order.User.mobile;
-                      subLabel = `Order #${order.id} • ${order.User.name}`;
-                    }
+                }}
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
+              />
+              {showOrderSearchSuggestions && searchTerm && orders.filter(o => 
+                o.id.toString().includes(searchTerm) || 
+                (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (o.User?.mobile || "").includes(searchTerm)
+              ).length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
+                  {orders
+                    .filter(o => 
+                      o.id.toString().includes(searchTerm) || 
+                      (o.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (o.User?.mobile || "").includes(searchTerm)
+                    )
+                    .slice(0, 5)
+                    .map((order, idx) => {
+                      let label = `Order #${order.id}`;
+                      let subLabel = order.User?.name || "Unknown Customer";
+                      if ((order.User?.name || "").toLowerCase().includes(searchTerm.toLowerCase())) {
+                        label = order.User.name;
+                        subLabel = `Order #${order.id} • ${order.User.mobile || ""}`;
+                      } else if ((order.User?.mobile || "").includes(searchTerm)) {
+                        label = order.User.mobile;
+                        subLabel = `Order #${order.id} • ${order.User.name}`;
+                      }
 
-                    const fillValue = label.startsWith("Order #") ? order.id.toString() : label;
+                      const fillValue = label.startsWith("Order #") ? order.id.toString() : label;
 
-                    return (
-                      <button
-                        key={order.id}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setSearchTerm(fillValue);
-                          setShowOrderSearchSuggestions(false);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
-                          idx === activeSuggestionIndex ? "bg-green-100 text-green-950 font-semibold" : "hover:bg-green-50/50"
-                        }`}
-                      >
-                        <div className="flex flex-col">
-                          <span>{label}</span>
-                          <span className="text-[10px] text-gray-400 font-semibold">{subLabel}</span>
-                        </div>
-                        <span className="text-green-700 font-bold text-[10px]">₹{parseFloat(order.totalAmount || 0).toFixed(2)}</span>
-                      </button>
-                    );
-                  })}
-              </div>
-            )}
+                      return (
+                        <button
+                          key={order.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchTerm(fillValue);
+                            setShowOrderSearchSuggestions(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                            idx === activeSuggestionIndex ? "bg-green-100 text-green-950 font-semibold" : "hover:bg-green-50/50"
+                          }`}
+                        >
+                          <div className="flex flex-col">
+                            <span>{label}</span>
+                            <span className="text-[10px] text-gray-400 font-semibold">{subLabel}</span>
+                          </div>
+                          <span className="text-green-700 font-bold text-[10px]">₹{parseFloat(order.totalAmount || 0).toFixed(2)}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Pickup Date:</span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+              />
+              {selectedDate && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate("")}
+                  className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2.5 rounded-2xl font-bold transition flex items-center gap-1"
+                  title="Clear Date"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter Tabs */}

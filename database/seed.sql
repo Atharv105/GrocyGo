@@ -44,7 +44,6 @@ CREATE TABLE `products` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
 -- ============================================================
 -- STEP 1: CATEGORIES  (run this first)
 -- ============================================================
