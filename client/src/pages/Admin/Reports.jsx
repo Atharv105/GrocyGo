@@ -100,16 +100,13 @@ function AdminReports() {
 
     // 5. Populate the daily sales chart using ALL orders that fall within the chart's date range
     allOrders.forEach((o) => {
-      let dateStr = "";
-      if (o.Slot) {
-        dateStr = o.Slot.date;
-      } else if (o.createdAt) {
-        const createdDate = new Date(o.createdAt);
-        const year = createdDate.getFullYear();
-        const month = String(createdDate.getMonth() + 1).padStart(2, "0");
-        const day = String(createdDate.getDate()).padStart(2, "0");
-        dateStr = `${year}-${month}-${day}`;
-      }
+      if (!o.createdAt) return;
+
+      const createdDate = new Date(o.createdAt);
+      const year = createdDate.getFullYear();
+      const month = String(createdDate.getMonth() + 1).padStart(2, "0");
+      const day = String(createdDate.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
 
       if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
         dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);

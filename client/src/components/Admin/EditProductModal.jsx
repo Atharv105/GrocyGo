@@ -27,13 +27,15 @@ const UNIT_OPTIONS = [
 ];
 
 function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
-  const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [nameMr, setNameMr] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [unit, setUnit] = useState("");
   const [customUnit, setCustomUnit] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [descriptionMr, setDescriptionMr] = useState("");
   const [image, setImage] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -59,7 +61,8 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
 
   useEffect(() => {
     if (product) {
-      setName(product.name || "");
+      setNameEn(product.name_en || "");
+      setNameMr(product.name_mr || "");
       setPrice(product.price || "");
       setStock(product.stock || "0");
       
@@ -73,10 +76,10 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
       }
 
       setCategoryId(product.categoryId || "");
-      setDescription(product.description || "");
+      setDescriptionEn(product.description_en || "");
+      setDescriptionMr(product.description_mr || "");
       setImage(product.image || "");
       setIsActive(product.isActive !== false);
-      // Timeout to ensure state updates settle before triggering changes
       setTimeout(() => setHasLoaded(true), 100);
     } else {
       setHasLoaded(false);
@@ -132,8 +135,8 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
   };
 
   useEffect(() => {
-    autoSelectImage(name, categoryId);
-  }, [name, categoryId, cloudinaryProducts, hasLoaded]);
+    autoSelectImage(nameEn, categoryId);
+  }, [nameEn, categoryId, cloudinaryProducts, hasLoaded]);
 
   if (!isOpen) return null;
 
@@ -142,7 +145,7 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
 
     const finalUnit = unit === "Other" ? customUnit.trim() : unit.trim();
 
-    if (!name.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
+    if (!nameEn.trim() || !nameMr.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
       alert("All fields marked with * are required");
       return;
     }
@@ -163,12 +166,14 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
     try {
       setLoading(true);
       await API.put(`/products/${product.id}`, {
-        name: name.trim(),
+        name_en: nameEn.trim(),
+        name_mr: nameMr.trim(),
         price: priceNum,
         stock: stockNum,
         unit: finalUnit,
         categoryId: parseInt(categoryId),
-        description: description.trim(),
+        description_en: descriptionEn.trim(),
+        description_mr: descriptionMr.trim(),
         image: image.trim(),
         isActive: isActive,
       });
@@ -198,14 +203,27 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            {/* Product Name */}
-            <div className="col-span-2">
-              <label className="font-medium text-gray-700">Product Name *</label>
+            {/* Product Name (English) */}
+            <div>
+              <label className="font-medium text-gray-700">Product Name (English) *</label>
               <input
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter Product Name"
+                value={nameEn}
+                onChange={(e) => setNameEn(e.target.value)}
+                placeholder="Enter English Name"
+                className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                required
+              />
+            </div>
+
+            {/* Product Name (Marathi) */}
+            <div>
+              <label className="font-medium text-gray-700">Product Name (Marathi) *</label>
+              <input
+                type="text"
+                value={nameMr}
+                onChange={(e) => setNameMr(e.target.value)}
+                placeholder="मराठी नाव प्रविष्ट करा"
                 className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
                 required
               />
@@ -290,13 +308,24 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
             )}
           </div>
 
-          {/* Description */}
+          {/* Description (English) */}
           <div>
-            <label className="font-medium text-gray-700">Description</label>
+            <label className="font-medium text-gray-700">Description (English)</label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter Product Description"
+              value={descriptionEn}
+              onChange={(e) => setDescriptionEn(e.target.value)}
+              placeholder="Enter Product Description in English"
+              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none h-20 resize-none"
+            />
+          </div>
+
+          {/* Description (Marathi) */}
+          <div>
+            <label className="font-medium text-gray-700">Description (Marathi)</label>
+            <textarea
+              value={descriptionMr}
+              onChange={(e) => setDescriptionMr(e.target.value)}
+              placeholder="मराठीत उत्पादन वर्णन प्रविष्ट करा"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none h-20 resize-none"
             />
           </div>

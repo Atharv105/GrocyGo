@@ -1,24 +1,24 @@
 import { Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Testimonials() {
+  const { t } = useTranslation();
+
   const reviews = [
     {
-      name: "Shivanee Patil",
-      city: "Kolhapur",
-      review:
-        "Booked my pickup slot and collected groceries in less than 5 minutes. Amazing experience!",
+      name: t("shivaneePatil"),
+      city: t("kolhapur"),
+      review: t("review1"),
     },
     {
-      name: "riya Sharma",
-      city: "Pune",
-      review:
-        "No more waiting in billing queues. The slot booking feature is extremely useful.",
+      name: t("riyaSharma"),
+      city: t("pune"),
+      review: t("review2"),
     },
     {
-      name: "Amit Desai",
-      city: "Sangli",
-      review:
-        "Fresh groceries, easy ordering process, and smooth pickup. Highly recommended.",
+      name: t("amitDesai"),
+      city: t("sangli"),
+      review: t("review3"),
     },
   ];
 
@@ -28,12 +28,11 @@ function Testimonials() {
         {/* Heading */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-gray-800">
-            What Our Customers Say
+            {t("whatCustomersSay")}
           </h2>
 
           <p className="text-gray-500 mt-4 text-lg">
-            Thousands of families trust GrocyGo for faster and smarter grocery
-            shopping.
+            {t("customerTrust")}
           </p>
         </div>
 

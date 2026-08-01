@@ -1,28 +1,29 @@
 import { ShoppingBasket, ShoppingCart, Clock3, Smile } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function HowItWorks() {
+  const { t } = useTranslation();
+
   const steps = [
     {
       icon: <ShoppingBasket size={38} />,
-      title: "Browse Products",
-      description:
-        "Explore fresh groceries category wise and discover daily essentials.",
+      title: t("browseProducts"),
+      description: t("browseProductsDesc"),
     },
     {
       icon: <ShoppingCart size={38} />,
-      title: "Add to Cart",
-      description: "Select products and prepare your grocery list with ease.",
+      title: t("addToCart"),
+      description: t("addToCartDesc"),
     },
     {
       icon: <Clock3 size={38} />,
-      title: "Book Pickup Slot",
-      description: "Choose a convenient time slot for grocery pickup.",
+      title: t("bookPickupSlot"),
+      description: t("bookPickupSlotDesc"),
     },
     {
       icon: <Smile size={38} />,
-      title: "Collect Without Waiting",
-      description:
-        "Visit the store during your slot and collect groceries instantly.",
+      title: t("collectNoWaiting"),
+      description: t("collectNoWaitingDesc"),
     },
   ];
 
@@ -32,11 +33,11 @@ function HowItWorks() {
         {/* Heading */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-gray-800">
-            How GrocyGo Works
+            {t("howItWorksTitle")}
           </h2>
 
           <p className="text-gray-500 mt-4 text-lg">
-            Smart grocery shopping with queue-free pickup.
+            {t("howItWorksSubtitle")}
           </p>
         </div>
 
@@ -97,12 +98,11 @@ function HowItWorks() {
           "
         >
           <h3 className="text-3xl font-bold">
-            Skip the Queue. Save Your Time.
+            {t("skipQueueSaveTime")}
           </h3>
 
           <p className="mt-4 text-green-100 text-lg">
-            Order groceries online and collect them during your booked time
-            slot.
+            {t("orderOnlineCollect")}
           </p>
         </div>
       </div>

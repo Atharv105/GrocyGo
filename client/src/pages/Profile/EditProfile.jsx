@@ -1,10 +1,12 @@
 import { useState, useEffect, useContext } from "react";
 import { FaUserCircle, FaCamera } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import API from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
 
 function EditProfile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { updateProfileState, user } = useContext(AuthContext);
   const isNewOrIncomplete = !user || user.name === "User";
@@ -43,25 +45,23 @@ function EditProfile() {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      alert("Full Name is required.");
+      alert(t("fullNameRequired", { defaultValue: "Full Name is required." }));
       return;
     }
 
     if (formData.name.trim().toLowerCase() === "user") {
-      alert("Please update your name to something other than 'User'.");
+      alert(t("updateNameAlert", { defaultValue: "Please update your name to something other than 'User'." }));
       return;
     }
-
-
 
     try {
       const res = await API.put("/auth/profile", formData);
       updateProfileState(res.data.user);
-      alert("Profile Updated Successfully");
+      alert(t("profileUpdatedToast", { defaultValue: "Profile Updated Successfully" }));
       navigate("/");
     } catch (err) {
       console.log(err);
-      alert(err.response?.data?.message || "Failed to update profile");
+      alert(err.response?.data?.message || t("failedUpdateProfile", { defaultValue: "Failed to update profile" }));
     }
   };
 
@@ -72,7 +72,7 @@ function EditProfile() {
 
         <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-t-3xl py-8">
           <h1 className="text-3xl font-bold text-center text-white">
-            Edit Profile
+            {t("editProfile", { defaultValue: "Edit Profile" })}
           </h1>
         </div>
 
@@ -89,13 +89,13 @@ function EditProfile() {
               </label>
             </div>
 
-            <p className="text-gray-500 mt-3">Change Profile Picture</p>
+            <p className="text-gray-500 mt-3">{t("changeProfilePicture", { defaultValue: "Change Profile Picture" })}</p>
           </div>
 
           {/* Name */}
 
           <div className="mt-10">
-            <label className="font-medium">Full Name</label>
+            <label className="font-medium">{t("profile", { defaultValue: "Full Name" })}</label>
 
             <input
               type="text"
@@ -109,7 +109,7 @@ function EditProfile() {
           {/* Mobile */}
 
           <div className="mt-6">
-            <label className="font-medium">Mobile Number</label>
+            <label className="font-medium">{t("mobileNumber")}</label>
 
             <input
               type="text"
@@ -123,14 +123,14 @@ function EditProfile() {
           {/* Address */}
 
           <div className="mt-6">
-            <label className="font-medium">Address</label>
+            <label className="font-medium">{t("addresses", { defaultValue: "Address" })}</label>
 
             <input
               type="text"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              placeholder="Enter your address"
+              placeholder={t("enterAddressPlaceholder", { defaultValue: "Enter your address" })}
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
             />
           </div>
@@ -142,7 +142,7 @@ function EditProfile() {
               type="submit"
               className="flex-1 bg-green-600 text-white py-4 rounded-xl font-semibold hover:bg-green-700"
             >
-              Save Changes
+              {t("saveChanges", { defaultValue: "Save Changes" })}
             </button>
 
             {!isNewOrIncomplete && (
@@ -151,7 +151,7 @@ function EditProfile() {
                 onClick={() => navigate("/profile")}
                 className="flex-1 border border-gray-300 py-4 rounded-xl font-semibold hover:bg-gray-100"
               >
-                Cancel
+                {t("cancel")}
               </button>
             )}
           </div>

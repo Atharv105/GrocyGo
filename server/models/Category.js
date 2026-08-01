@@ -10,10 +10,22 @@ const Category = sequelize.define(
       primaryKey: true,
     },
 
-    name: {
+    name_en: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
+    },
+
+    name_mr: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    name: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue("name_en");
+      },
     },
 
     description: {

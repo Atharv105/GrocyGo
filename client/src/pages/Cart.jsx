@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, ShoppingBag, CheckCircle, AlertTriangle } from "lucide-react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
@@ -7,6 +8,7 @@ import * as orderService from "../services/orderService";
 import * as slotService from "../services/slotService";
 
 function Cart() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isLoggedIn } = useContext(AuthContext);
   const { cartItems, cartTotal, cartLoading, updateQuantity, removeFromCart, clearCart, fetchCart } = useContext(CartContext);
@@ -115,13 +117,13 @@ function Cart() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <ShoppingCart size={64} className="mx-auto text-gray-300 mb-6" />
-          <h2 className="text-2xl font-bold text-gray-700">Please Login</h2>
-          <p className="text-gray-400 mt-2 mb-6">Login to view your cart.</p>
+          <h2 className="text-2xl font-bold text-gray-700">{t("pleaseLogin")}</h2>
+          <p className="text-gray-400 mt-2 mb-6">{t("loginToViewCart")}</p>
           <Link
             to="/login"
             className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition"
           >
-            Login
+            {t("login")}
           </Link>
         </div>
       </div>
@@ -133,7 +135,7 @@ function Cart() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-green-700 font-medium">Loading cart...</p>
+          <p className="text-green-700 font-medium">{t("loadingCart")}</p>
         </div>
       </div>
     );
@@ -146,15 +148,15 @@ function Cart() {
           <div className="w-28 h-28 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShoppingBag size={52} className="text-green-300" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-700">Your Cart is Empty</h2>
+          <h2 className="text-2xl font-bold text-gray-700">{t("cartEmptyTitle")}</h2>
           <p className="text-gray-400 mt-2 mb-8 max-w-sm mx-auto">
-            Browse our fresh products and add items to your cart.
+            {t("browseFreshText")}
           </p>
           <Link
             to="/products"
             className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition"
           >
-            Shop Now
+            {t("shopNow")}
           </Link>
         </div>
       </div>
@@ -191,7 +193,7 @@ function Cart() {
               <ArrowLeft size={24} className="text-gray-600" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">My Cart 🛒</h1>
+              <h1 className="text-3xl font-bold text-gray-800">{t("cartTitle")}</h1>
               <p className="text-gray-500">{cartItems.length} item{cartItems.length !== 1 ? "s" : ""}</p>
             </div>
           </div>
@@ -308,7 +310,7 @@ function Cart() {
           {/* Order Summary */}
           <div className="lg:w-80 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-800 mb-5">Order Summary</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-5">{t("orderSummary", { defaultValue: "Order Summary" })}</h2>
 
               <div className="space-y-3 text-sm">
                 {cartItems.map((item) => {
@@ -329,7 +331,7 @@ function Cart() {
 
               <div className="border-t border-gray-100 mt-4 pt-4">
                 <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
+                  <span>{t("total", { defaultValue: "Total" })}</span>
                   <span className="text-green-700">₹{getDynamicCartTotal().toFixed(2)}</span>
                 </div>
               </div>
@@ -337,11 +339,11 @@ function Cart() {
               {/* Pickup Slot Selection */}
               <div className="border-t border-gray-100 mt-5 pt-5 space-y-4">
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                  <span className="text-orange-500">⏰</span> Select Pickup Slot
+                  <span className="text-orange-500">⏰</span> {t("selectPickupSlot", { defaultValue: "Select Pickup Slot" })}
                 </h3>
                 
                 <div>
-                  <label className="text-xs text-gray-400 block mb-1 font-medium">Pickup Date</label>
+                  <label className="text-xs text-gray-400 block mb-1 font-medium">{t("pickupDate", { defaultValue: "Pickup Date" })}</label>
                   <input
                     type="date"
                     min={new Date().toISOString().split("T")[0]}
@@ -354,17 +356,17 @@ function Cart() {
                 {slotsLoading ? (
                   <div className="flex items-center justify-center py-4 gap-2">
                     <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs text-green-700">Loading slots...</span>
+                    <span className="text-xs text-green-700">{t("loadingSlots", { defaultValue: "Loading slots..." })}</span>
                   </div>
                 ) : slotsError ? (
                   <p className="text-xs text-red-500">{slotsError}</p>
                 ) : availableSlots.length === 0 ? (
                   <p className="text-xs text-orange-500 bg-orange-50 p-2.5 rounded-xl border border-orange-100">
-                    No slots available for this date.
+                    {t("noSlotsAvailable", { defaultValue: "No slots available for this date." })}
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-xs text-gray-400 block font-medium">Available Times</label>
+                    <label className="text-xs text-gray-400 block font-medium">{t("availableTimes", { defaultValue: "Available Times" })}</label>
                     <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1">
                       {availableSlots.map((slot) => {
                         const isSelected = selectedSlotId === slot.id;
@@ -387,7 +389,7 @@ function Cart() {
                                 ? "bg-orange-50 text-orange-600 font-medium"
                                 : "bg-green-50 text-green-600"
                             }`}>
-                              {slot.availableCapacity} left
+                              {slot.availableCapacity} {t("left", { defaultValue: "left" })}
                             </span>
                           </button>
                         );
@@ -412,12 +414,12 @@ function Cart() {
                 {isCheckoutLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Placing Order...
+                    {t("placingOrder", { defaultValue: "Placing Order..." })}
                   </>
                 ) : (
                   <>
                     <ShoppingCart size={20} />
-                    Place Order
+                    {t("placeOrder", { defaultValue: "Place Order" })}
                   </>
                 )}
               </button>
@@ -426,7 +428,7 @@ function Cart() {
                 to="/products"
                 className="block mt-3 text-center text-green-600 hover:underline font-medium text-sm"
               >
-                ← Continue Shopping
+                {t("continueShopping", { defaultValue: "← Continue Shopping" })}
               </Link>
             </div>
           </div>

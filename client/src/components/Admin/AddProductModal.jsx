@@ -26,13 +26,15 @@ const UNIT_OPTIONS = [
 ];
 
 function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
-  const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [nameMr, setNameMr] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [unit, setUnit] = useState("");
   const [customUnit, setCustomUnit] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [descriptionMr, setDescriptionMr] = useState("");
   const [image, setImage] = useState("");
   const [loading, setLoading] = useState(false);
   const [cloudinaryProducts, setCloudinaryProducts] = useState([]);
@@ -108,15 +110,15 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
   };
 
   useEffect(() => {
-    autoSelectImage(name, categoryId);
-  }, [name, categoryId, cloudinaryProducts]);
+    autoSelectImage(nameEn, categoryId);
+  }, [nameEn, categoryId, cloudinaryProducts]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const finalUnit = unit === "Other" ? customUnit.trim() : unit.trim();
 
-    if (!name.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
+    if (!nameEn.trim() || !nameMr.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
       alert("All fields marked with * are required");
       return;
     }
@@ -137,16 +139,28 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
     try {
       setLoading(true);
       await API.post("/products", {
-        name: name.trim(),
+        name_en: nameEn.trim(),
+        name_mr: nameMr.trim(),
         price: priceNum,
         stock: stockNum,
         unit: finalUnit,
         categoryId: parseInt(categoryId),
-        description: description.trim(),
+        description_en: descriptionEn.trim(),
+        description_mr: descriptionMr.trim(),
         image: image.trim(),
       });
 
       alert("Product created successfully!");
+      setNameEn("");
+      setNameMr("");
+      setDescriptionEn("");
+      setDescriptionMr("");
+      setPrice("");
+      setStock("");
+      setUnit("");
+      setCustomUnit("");
+      setCategoryId("");
+      setImage("");
       onRefresh();
       onClose();
     } catch (err) {
@@ -160,11 +174,11 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
-  const suggestions = name
+  const suggestions = nameEn
     ? cloudinaryProducts
         .map((p) => p.folderName)
         .filter((val, index, self) => self.indexOf(val) === index)
-        .filter((folder) => folder.toLowerCase().includes(name.toLowerCase()))
+        .filter((folder) => folder.toLowerCase().includes(nameEn.toLowerCase()))
         .slice(0, 5)
     : [];
 
@@ -182,14 +196,14 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
-            {/* Product Name */}
+            {/* Product Name (English) */}
             <div className="col-span-2 relative">
-              <label className="font-medium text-gray-700">Product Name *</label>
+              <label className="font-medium text-gray-700">Product Name (English) *</label>
               <input
                 type="text"
-                value={name}
+                value={nameEn}
                 onChange={(e) => {
-                  setName(e.target.value);
+                  setNameEn(e.target.value);
                   setShowSuggestions(true);
                   setActiveSuggestionIndex(-1);
                 }}
@@ -205,7 +219,7 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
                   } else if (e.key === "Enter") {
                     if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
                       e.preventDefault();
-                      setName(suggestions[activeSuggestionIndex]);
+                      setNameEn(suggestions[activeSuggestionIndex]);
                       setShowSuggestions(false);
                     }
                   } else if (e.key === "Escape") {
@@ -224,7 +238,7 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
                       type="button"
                       onMouseDown={(e) => {
                         e.preventDefault();
-                        setName(folder);
+                        setNameEn(folder);
                         setShowSuggestions(false);
                       }}
                       className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
@@ -237,6 +251,19 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Product Name (Marathi) */}
+            <div className="col-span-2">
+              <label className="font-medium text-gray-700">Product Name (Marathi) *</label>
+              <input
+                type="text"
+                value={nameMr}
+                onChange={(e) => setNameMr(e.target.value)}
+                placeholder="मराठी नाव प्रविष्ट करा (उदा. हापूस आंबा)"
+                className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                required
+              />
             </div>
 
             {/* Price */}
@@ -318,13 +345,24 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
             )}
           </div>
 
-          {/* Description */}
+          {/* Description (English) */}
           <div>
-            <label className="font-medium text-gray-700">Description</label>
+            <label className="font-medium text-gray-700">Description (English)</label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter Product Description"
+              value={descriptionEn}
+              onChange={(e) => setDescriptionEn(e.target.value)}
+              placeholder="Enter Product Description in English"
+              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none h-20 resize-none"
+            />
+          </div>
+
+          {/* Description (Marathi) */}
+          <div>
+            <label className="font-medium text-gray-700">Description (Marathi)</label>
+            <textarea
+              value={descriptionMr}
+              onChange={(e) => setDescriptionMr(e.target.value)}
+              placeholder="मराठीत उत्पादन वर्णन प्रविष्ट करा"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none h-20 resize-none"
             />
           </div>

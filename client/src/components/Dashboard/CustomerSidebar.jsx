@@ -12,19 +12,21 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 function CustomerSidebar({ isOpen, setIsOpen }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
 
   const menus = [
-    { title: "Store Home", icon: <FaHome />, path: "/" },
-    { title: "Dashboard", icon: <FaTachometerAlt />, path: "/dashboard" },
-    { title: "My Orders", icon: <FaClipboardList />, path: "/dashboard/orders" },
-    { title: "Wishlist", icon: <FaHeart />, path: "/dashboard/wishlist" },
-    { title: "Pickup Slots", icon: <FaClock />, path: "/dashboard/slots" },
-    { title: "Addresses", icon: <FaMapMarkerAlt />, path: "/dashboard/address" },
-    { title: "Settings", icon: <FaCog />, path: "/dashboard/settings" },
+    { title: t("storeHome"), icon: <FaHome />, path: "/" },
+    { title: t("dashboard"), icon: <FaTachometerAlt />, path: "/dashboard" },
+    { title: t("myOrders"), icon: <FaClipboardList />, path: "/dashboard/orders" },
+    { title: t("wishlist"), icon: <FaHeart />, path: "/dashboard/wishlist" },
+    { title: t("pickupSlots"), icon: <FaClock />, path: "/dashboard/slots" },
+    { title: t("addresses"), icon: <FaMapMarkerAlt />, path: "/dashboard/address" },
+    { title: t("settings"), icon: <FaCog />, path: "/dashboard/settings" },
   ];
 
   const handleLogout = () => {
@@ -53,13 +55,13 @@ function CustomerSidebar({ isOpen, setIsOpen }) {
           <div className="flex items-center gap-3">
             <FaUserCircle size={48} className="text-green-200 shrink-0" />
             <div className="min-w-0">
-              <h2 className="text-lg font-bold truncate">{user?.name || "Customer"}</h2>
+              <h2 className="text-lg font-bold truncate">{user?.name || t("profile")}</h2>
               <p className="text-green-200 text-sm truncate">{user?.mobile}</p>
             </div>
           </div>
           <div className="mt-3 inline-flex items-center gap-1.5 bg-green-600/50 px-3 py-1 rounded-full text-xs font-medium">
             <span className="w-2 h-2 bg-green-300 rounded-full" />
-            Customer Account
+            {t("customerAccount")}
           </div>
         </div>
 
@@ -93,14 +95,14 @@ function CustomerSidebar({ isOpen, setIsOpen }) {
             className="flex items-center gap-4 px-5 py-3 rounded-xl hover:bg-green-600/60 text-green-100 transition font-medium"
           >
             <FaUserCircle />
-            My Profile
+            {t("myProfile")}
           </NavLink>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-4 bg-red-500 hover:bg-red-600 px-5 py-3 rounded-xl transition font-medium"
           >
             <FaSignOutAlt />
-            Logout
+            {t("logout")}
           </button>
         </div>
       </aside>

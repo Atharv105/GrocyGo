@@ -4,7 +4,8 @@ import API from "../../services/api";
 import CloudinaryGalleryModal from "./CloudinaryGalleryModal";
 
 function EditCategoryModal({ isOpen, onClose, category, onRefresh }) {
-  const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [nameMr, setNameMr] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,8 @@ function EditCategoryModal({ isOpen, onClose, category, onRefresh }) {
 
   useEffect(() => {
     if (category) {
-      setName(category.name || "");
+      setNameEn(category.name_en || "");
+      setNameMr(category.name_mr || "");
       setDescription(category.description || "");
       setImage(category.image || "");
       setTimeout(() => setHasLoaded(true), 100);
@@ -70,23 +72,24 @@ function EditCategoryModal({ isOpen, onClose, category, onRefresh }) {
   };
 
   useEffect(() => {
-    autoSelectImage(name);
-  }, [name, cloudinaryCategories, hasLoaded]);
+    autoSelectImage(nameEn);
+  }, [nameEn, cloudinaryCategories, hasLoaded]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim()) {
-      alert("Category name is required");
+    if (!nameEn.trim() || !nameMr.trim()) {
+      alert("English and Marathi category names are required");
       return;
     }
 
     try {
       setLoading(true);
       await API.put(`/categories/${category.id}`, {
-        name: name.trim(),
+        name_en: nameEn.trim(),
+        name_mr: nameMr.trim(),
         description: description.trim(),
         image: image.trim() || "📦",
       });
@@ -118,14 +121,27 @@ function EditCategoryModal({ isOpen, onClose, category, onRefresh }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Category Name */}
+          {/* Category Name (English) */}
           <div>
-            <label className="font-medium text-gray-700">Category Name *</label>
+            <label className="font-medium text-gray-700">Category Name (English) *</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter Category Name"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              placeholder="Enter English Name"
+              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+              required
+            />
+          </div>
+
+          {/* Category Name (Marathi) */}
+          <div>
+            <label className="font-medium text-gray-700">Category Name (Marathi) *</label>
+            <input
+              type="text"
+              value={nameMr}
+              onChange={(e) => setNameMr(e.target.value)}
+              placeholder="मराठी नाव प्रविष्ट करा"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
               required
             />
@@ -213,7 +229,7 @@ function EditCategoryModal({ isOpen, onClose, category, onRefresh }) {
             setGalleryOpen(false);
           }}
           initialTab="categories"
-          currentCategoryName={name}
+          currentCategoryName={nameEn}
         />
       )}
     </div>

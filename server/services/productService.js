@@ -11,13 +11,16 @@ const createProduct = async (productData) => {
     // check duplicate product in the same category
     const existingProduct = await Product.findOne({
         where: {
-            name: productData.name,
+            [Op.or]: [
+                { name_en: productData.name_en },
+                { name_mr: productData.name_mr }
+            ],
             categoryId: productData.categoryId,
         },
     });
 
     if (existingProduct) {
-        throw new Error("Product already exists in this category");
+        throw new Error("Product already exists in this category with the same English or Marathi name");
     }
 
     // Create new product
@@ -47,9 +50,10 @@ const getAllProducts = async (query) => {
 
   // Search by product name
   if (search) {
-    where.name = {
-      [Op.like]: `%${search}%`,
-    };
+    where[Op.or] = [
+      { name_en: { [Op.like]: `%${search}%` } },
+      { name_mr: { [Op.like]: `%${search}%` } }
+    ];
   }
 
   // Filter by category
@@ -84,7 +88,7 @@ const getAllProducts = async (query) => {
     include: [
       {
         model: Category,
-        attributes: ["id", "name"],
+        attributes: ["id", "name_en", "name_mr"],
       },
     ],
     order: [[sort, order]],
@@ -105,7 +109,7 @@ const getProductById = async(id) => {
         include : [
             {
                 model: Category,
-                attributes: ["id","name"],
+                attributes: ["id", "name_en", "name_mr"],
             },
         ],
     });
@@ -133,17 +137,21 @@ const updateProduct = async (id, productData) => {
   }
 
   // Check duplicate name in the same category
-  if (productData.name) {
+  if (productData.name_en || productData.name_mr) {
+    const orConditions = [];
+    if (productData.name_en) orConditions.push({ name_en: productData.name_en });
+    if (productData.name_mr) orConditions.push({ name_mr: productData.name_mr });
+
     const existingProduct = await Product.findOne({
       where: {
-        name: productData.name,
+        [Op.or]: orConditions,
         categoryId: productData.categoryId || product.categoryId,
       },
     });
 
     if (existingProduct && existingProduct.id !== product.id) {
       throw new AppError(
-        "Product already exists in this category",
+        "Product already exists in this category with the same English or Marathi name",
         400
       );
     }

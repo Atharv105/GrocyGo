@@ -2,8 +2,10 @@ import { useState, useContext } from "react";
 import { ShoppingCart } from "lucide-react";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 function ProductCard({ product }) {
+  const { t } = useTranslation();
   const { isLoggedIn } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
   const [adding, setAdding] = useState(false);
@@ -33,12 +35,12 @@ function ProductCard({ product }) {
       <div className="flex justify-end items-center mb-1">
         {product.stock <= 5 && product.stock > 0 && (
           <span className="bg-orange-100 text-orange-600 text-xs px-3 py-1 rounded-full font-medium">
-            Low Stock
+            {t("lowStock")}
           </span>
         )}
         {product.stock === 0 && (
           <span className="bg-red-100 text-red-600 text-xs px-3 py-1 rounded-full font-medium">
-            Out of Stock
+            {t("outOfStock")}
           </span>
         )}
       </div>
@@ -77,7 +79,7 @@ function ProductCard({ product }) {
         ) : (
           <>
             <ShoppingCart size={16} />
-            {added ? "Added! ✓" : "Add to Cart"}
+            {added ? t("added") : t("addToCart")}
           </>
         )}
       </button>

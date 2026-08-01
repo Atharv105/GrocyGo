@@ -485,9 +485,17 @@ function AdminOrders() {
   };
 
   // Statistics Calculations
-  // Filter by selected date (pickup slot date)
+  // Filter by selected date (order creation date)
   const dateFilteredOrders = selectedDate
-    ? orders.filter(order => order.Slot && order.Slot.date === selectedDate)
+    ? orders.filter(order => {
+        if (!order.createdAt) return false;
+        const createdDate = new Date(order.createdAt);
+        const year = createdDate.getFullYear();
+        const month = String(createdDate.getMonth() + 1).padStart(2, "0");
+        const day = String(createdDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+        return dateStr === selectedDate;
+      })
     : orders;
 
   const stats = {

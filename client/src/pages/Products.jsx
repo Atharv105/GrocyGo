@@ -5,8 +5,10 @@ import { getAllProducts } from "../services/productService";
 import { getAllCategories } from "../services/categoryService";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 function ProductCard({ product, onAddToCart, adding }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
       <div className="h-44 bg-gradient-to-br from-green-50 to-orange-50 flex items-center justify-center text-6xl relative overflow-hidden">
@@ -17,19 +19,19 @@ function ProductCard({ product, onAddToCart, adding }) {
         )}
         {product.stock <= 5 && product.stock > 0 && (
           <span className="absolute top-3 right-3 bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">
-            Low Stock
+            {t("lowStock")}
           </span>
         )}
         {product.stock === 0 && (
           <span className="absolute top-3 right-3 bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
-            Out of Stock
+            {t("outOfStock")}
           </span>
         )}
       </div>
 
       <div className="p-4 flex flex-col flex-1">
         <p className="text-xs text-green-600 font-semibold uppercase tracking-wide mb-1">
-          {product.Category?.name || "General"}
+          {product.Category?.name || t("generalCategory", { defaultValue: "General" })}
         </p>
         <h3 className="font-bold text-gray-800 text-lg leading-snug">{product.name}</h3>
         {product.description && (
@@ -52,7 +54,7 @@ function ProductCard({ product, onAddToCart, adding }) {
             ) : (
               <ShoppingCart size={16} />
             )}
-            Add
+            {t("add")}
           </button>
         </div>
       </div>
@@ -61,6 +63,7 @@ function ProductCard({ product, onAddToCart, adding }) {
 }
 
 function Products() {
+  const { t, i18n } = useTranslation();
   const { isLoggedIn } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
   const [searchParams] = useSearchParams();
@@ -135,11 +138,11 @@ function Products() {
   useEffect(() => {
     fetchCategories();
     fetchAllProductsForSuggestions();
-  }, []);
+  }, [i18n.language]);
 
   useEffect(() => {
     fetchProducts();
-  }, [page, selectedCategory, search, sortBy, inStockOnly]);
+  }, [page, selectedCategory, search, sortBy, inStockOnly, i18n.language]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -154,17 +157,17 @@ function Products() {
 
   const handleAddToCart = async (productId) => {
     if (!isLoggedIn) {
-      setToast("Please login to add items to cart!");
+      setToast(t("loginToViewCart", { defaultValue: "Please login to add items to cart!" }));
       setTimeout(() => setToast(""), 3000);
       return;
     }
     try {
       setAdding(productId);
       await addToCart(productId, 1);
-      setToast("Added to cart! 🛒");
+      setToast(t("addedToCartToast", { defaultValue: "Added to cart! 🛒" }));
       setTimeout(() => setToast(""), 2500);
     } catch (err) {
-      setToast(err.response?.data?.message || "Failed to add to cart");
+      setToast(err.response?.data?.message || t("failedAddToCart", { defaultValue: "Failed to add to cart" }));
       setTimeout(() => setToast(""), 3000);
     } finally {
       setAdding(null);
@@ -188,9 +191,9 @@ function Products() {
 
       {/* Hero Banner */}
       <div className="bg-gradient-to-r from-green-600 to-green-800 py-14 px-6 text-white text-center">
-        <h1 className="text-4xl md:text-5xl font-bold">Fresh Groceries 🌿</h1>
+        <h1 className="text-4xl md:text-5xl font-bold">{t("freshGroceries")}</h1>
         <p className="mt-3 text-green-100 max-w-xl mx-auto">
-          Order fresh, quality groceries and pick them up at your convenience.
+          {t("orderFreshSubtitle")}
         </p>
 
         {/* Search */}
@@ -227,7 +230,7 @@ function Products() {
                   setShowSuggestions(false);
                 }
               }}
-              placeholder="Search products..."
+              placeholder={t("searchPlaceholderProducts")}
               className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
             />
             {showSuggestions && suggestions.length > 0 && (
@@ -258,7 +261,7 @@ function Products() {
             type="submit"
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3.5 rounded-xl font-semibold transition"
           >
-            Search
+            {t("search")}
           </button>
         </form>
       </div>
@@ -269,7 +272,7 @@ function Products() {
           <aside className="md:w-56 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm p-5 sticky top-24">
               <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Filter size={16} className="text-green-600" /> Categories
+                <Filter size={16} className="text-green-600" /> {t("categories")}
               </h2>
               <button
                 onClick={() => handleCategoryChange("")}
@@ -279,7 +282,7 @@ function Products() {
                     : "hover:bg-green-50 text-gray-700"
                 }`}
               >
-                All Products
+                {t("allProducts")}
               </button>
               {categories.map((cat) => (
                 <button
@@ -312,14 +315,14 @@ function Products() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <p className="text-gray-500 text-sm font-semibold">
-                  {loading ? "Loading..." : `${totalProducts} products found`}
+                  {loading ? t("loading") : `${totalProducts} ${t("productsFound")}`}
                 </p>
                 {search && (
                   <button
                     onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}
                     className="text-xs text-red-500 hover:underline font-bold"
                   >
-                    Clear search
+                    {t("clearSearch")}
                   </button>
                 )}
               </div>
@@ -336,7 +339,7 @@ function Products() {
                     }}
                     className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
                   />
-                  In-Stock Only
+                  {t("inStockOnly")}
                 </label>
 
                 {/* Sort selector */}
@@ -348,10 +351,10 @@ function Products() {
                   }}
                   className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:border-green-500 outline-none cursor-pointer shadow-sm"
                 >
-                  <option value="createdAt-DESC">Newest</option>
-                  <option value="price-ASC">Price: Low to High</option>
-                  <option value="price-DESC">Price: High to Low</option>
-                  <option value="name-ASC">Name: A to Z</option>
+                  <option value="createdAt-DESC">{t("newest")}</option>
+                  <option value="price-ASC">{t("priceLowHigh")}</option>
+                  <option value="price-DESC">{t("priceHighLow")}</option>
+                  <option value="name-ASC">{t("nameAsc")}</option>
                 </select>
               </div>
             </div>
@@ -366,8 +369,8 @@ function Products() {
             ) : products.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 text-center shadow-sm">
                 <p className="text-5xl mb-4">🔍</p>
-                <h3 className="text-xl font-bold text-gray-700">No products found</h3>
-                <p className="text-gray-400 mt-2">Try a different search or category.</p>
+                <h3 className="text-xl font-bold text-gray-700">{t("noProductsFound")}</h3>
+                <p className="text-gray-400 mt-2">{t("noProductsTryDifferent")}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -390,17 +393,17 @@ function Products() {
                   disabled={page === 1}
                   className="flex items-center gap-1 px-4 py-2.5 border rounded-xl hover:bg-gray-100 disabled:opacity-40 font-semibold text-gray-700"
                 >
-                  <ChevronLeft size={18} /> Prev
+                  <ChevronLeft size={18} /> {t("prev")}
                 </button>
                 <span className="text-gray-600 font-medium">
-                  Page {page} of {totalPages}
+                  {t("pageOf", { current: page, total: totalPages })}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                   disabled={page === totalPages}
                   className="flex items-center gap-1 px-4 py-2.5 border rounded-xl hover:bg-gray-100 disabled:opacity-40 font-semibold text-gray-700"
                 >
-                  Next <ChevronRight size={18} />
+                  {t("next")} <ChevronRight size={18} />
                 </button>
               </div>
             )}

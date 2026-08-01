@@ -16,7 +16,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 function Sidebar({ isOpen, setIsOpen }) {
   const navigate = useNavigate();
-  const {logout} = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
 
   const menus = [
     {
@@ -78,9 +78,8 @@ function Sidebar({ isOpen, setIsOpen }) {
       )}
 
       <aside
-        className={`w-72 bg-gradient-to-b from-green-700 to-green-900 text-white h-screen shadow-xl flex flex-col fixed inset-y-0 left-0 z-30 transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`w-72 bg-gradient-to-b from-green-700 to-green-900 text-white h-screen shadow-xl flex flex-col fixed inset-y-0 left-0 z-30 transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Logo */}
         <Link
@@ -101,10 +100,9 @@ function Sidebar({ isOpen, setIsOpen }) {
               end={menu.path === "/admin"}
               onClick={() => setIsOpen && setIsOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-5 py-4 rounded-xl mb-3 transition-all ${
-                  isActive
-                    ? "bg-white text-green-700 font-semibold"
-                    : "hover:bg-green-600"
+                `flex items-center gap-4 px-5 py-4 rounded-xl mb-3 transition-all ${isActive
+                  ? "bg-white text-green-700 font-semibold"
+                  : "hover:bg-green-600"
                 }`
               }
             >

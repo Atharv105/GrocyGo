@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { 
   ClipboardList, 
   Eye, 
@@ -16,6 +17,7 @@ import * as orderService from "../../services/orderService";
 import API from "../../services/api";
 
 function Orders() {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,7 +75,7 @@ function Orders() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [i18n.language]);
 
   // Fetch Order Details when selectedOrderId changes
   useEffect(() => {
@@ -100,7 +102,7 @@ function Orders() {
     };
 
     fetchDetails();
-  }, [selectedOrderId]);
+  }, [selectedOrderId, i18n.language]);
 
   // Handle Order Cancellation
   const handleCancelOrder = async () => {
@@ -222,7 +224,7 @@ function Orders() {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300">
           <CheckCircle size={12} />
-          COMPLETED
+          {t("completed", { defaultValue: "COMPLETED" })}
         </span>
       );
 
@@ -230,7 +232,7 @@ function Orders() {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
           <CheckCircle size={12} />
-          CONFIRMED
+          {t("confirmed", { defaultValue: "CONFIRMED" })}
         </span>
       );
 
@@ -238,7 +240,7 @@ function Orders() {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
           <Ban size={12} />
-          CANCELLED
+          {t("cancelled", { defaultValue: "CANCELLED" })}
         </span>
       );
 
@@ -246,7 +248,7 @@ function Orders() {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
           <Clock size={12} />
-          PENDING
+          {t("pending", { defaultValue: "PENDING" })}
         </span>
       );
   }
@@ -257,13 +259,13 @@ function Orders() {
       case "PAID":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-            PAID
+            {t("paid", { defaultValue: "PAID" })}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-            {status || "PENDING"}
+            {status === "PENDING" ? t("pending", { defaultValue: "PENDING" }) : status || t("pending", { defaultValue: "PENDING" })}
           </span>
         );
     }
@@ -273,7 +275,7 @@ function Orders() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-green-700 font-medium">Loading your orders...</p>
+        <p className="text-green-700 font-medium">{t("loadingOrders", { defaultValue: "Loading your orders..." })}</p>
       </div>
     );
   }
@@ -281,8 +283,8 @@ function Orders() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">My Orders 📦</h1>
-        <p className="text-gray-500 mt-1">Track and manage your order history.</p>
+        <h1 className="text-3xl font-bold text-gray-800">{t("myOrders")} 📦</h1>
+        <p className="text-gray-500 mt-1">{t("ordersDesc", { defaultValue: "Track and manage your order history." })}</p>
       </div>
 
       {error && (
@@ -297,9 +299,9 @@ function Orders() {
           <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
             <ClipboardList size={44} className="text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-700">No Orders Yet</h2>
+          <h2 className="text-2xl font-bold text-gray-700">{t("noOrdersYet", { defaultValue: "No Orders Yet" })}</h2>
           <p className="text-gray-400 mt-2 max-w-sm">
-            You haven't placed any orders yet. Browse our inventory to get started!
+            {t("noOrdersYetDesc", { defaultValue: "You haven't placed any orders yet. Browse our inventory to get started!" })}
           </p>
         </div>
       ) : (
@@ -310,7 +312,7 @@ function Orders() {
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Search by Order ID..."
+                  placeholder={t("searchOrderPlaceholder", { defaultValue: "Search by Order ID..." })}
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -358,7 +360,7 @@ function Orders() {
                             idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
                           }`}
                         >
-                          <span>Order #{order.id}</span>
+                          <span>{t("orderNo", { defaultValue: "Order #" })}{order.id}</span>
                           <span className="text-[10px] text-gray-400 font-semibold">{new Date(order.createdAt).toLocaleDateString()}</span>
                         </button>
                       ))}
@@ -366,27 +368,39 @@ function Orders() {
                 )}
               </div>
               <div className="flex gap-2 flex-wrap">
-                {["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
-                      activeTab === tab
-                        ? "bg-green-600 text-white shadow-sm"
-                        : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+                {["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map((tab) => {
+                  const getTabLabel = (tName) => {
+                    switch (tName) {
+                      case "ALL": return t("all", { defaultValue: "ALL" });
+                      case "PENDING": return t("pending", { defaultValue: "PENDING" });
+                      case "CONFIRMED": return t("confirmed", { defaultValue: "CONFIRMED" });
+                      case "COMPLETED": return t("completed", { defaultValue: "COMPLETED" });
+                      case "CANCELLED": return t("cancelled", { defaultValue: "CANCELLED" });
+                      default: return tName;
+                    }
+                  };
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                        activeTab === tab
+                          ? "bg-green-600 text-white shadow-sm"
+                          : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200"
+                      }`}
+                    >
+                      {getTabLabel(tab)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
 
           {filteredOrders.length === 0 ? (
             <div className="bg-white rounded-3xl p-16 text-center border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-700">No orders match your filter</h3>
-              <p className="text-gray-400 mt-2">Try a different status or clear the search.</p>
+              <h3 className="text-xl font-bold text-gray-700">{t("noOrdersMatchFilter", { defaultValue: "No orders match your filter" })}</h3>
+              <p className="text-gray-400 mt-2">{t("tryDifferentFilter", { defaultValue: "Try a different status or clear the search." })}</p>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -399,7 +413,7 @@ function Orders() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-lg font-bold text-gray-800">
-                        Order #{order.id}
+                        {t("orderNo", { defaultValue: "Order #" })}{order.id}
                       </span>
                       {getStatusBadge(order.status)}
                       {getPaymentStatusBadge(order.paymentStatus)}
@@ -419,7 +433,7 @@ function Orders() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="font-semibold text-gray-700">Total:</span>
+                        <span className="font-semibold text-gray-700">{t("total", { defaultValue: "Total" })}:</span>
                         <span className="font-bold text-green-700">₹{parseFloat(order.totalAmount || 0).toFixed(2)}</span>
                       </div>
                     </div>
@@ -431,7 +445,7 @@ function Orders() {
                       onClick={() => setSelectedOrderId(order.id)}
                       className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 px-4 py-2.5 rounded-xl font-bold text-sm transition border border-gray-200"
                     >
-                      <Eye size={16} /> View Items
+                      <Eye size={16} /> {t("viewItems", { defaultValue: "View Items" })}
                     </button>
 
                     {order.status === "PENDING" && (
@@ -439,7 +453,7 @@ function Orders() {
                         onClick={() => setCancellingOrderId(order.id)}
                         className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-xl font-bold text-sm transition border border-red-100"
                       >
-                        Cancel Order
+                        {t("cancelOrder", { defaultValue: "Cancel Order" })}
                       </button>
                     )}
                   </div>
@@ -458,9 +472,9 @@ function Orders() {
             <div className="px-6 py-5 bg-gradient-to-r from-green-50 to-white border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-800">
-                  Order Details #{selectedOrderId}
+                  {t("orderDetails", { defaultValue: "Order Details" })} #{selectedOrderId}
                 </h3>
-                <p className="text-xs text-gray-400 mt-0.5">Line items & information</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t("lineItemsInfo", { defaultValue: "Line items & information" })}</p>
               </div>
               <button
                 onClick={() => { setSelectedOrderId(null); setIsEditingItems(false); }}
@@ -475,7 +489,7 @@ function Orders() {
               {detailsLoading && (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
                   <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-green-700 font-medium text-sm">Fetching items...</p>
+                  <p className="text-green-700 font-medium text-sm">{t("fetchingItems", { defaultValue: "Fetching items..." })}</p>
                 </div>
               )}
 
@@ -491,19 +505,19 @@ function Orders() {
                   {/* Summary row */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Status</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{t("status", { defaultValue: "Status" })}</p>
                       <div className="mt-1">{getStatusBadge(orderDetails.status)}</div>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Payment</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{t("payment", { defaultValue: "Payment" })}</p>
                       <div className="mt-1">{getPaymentStatusBadge(orderDetails.paymentStatus)}</div>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Amount</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{t("total", { defaultValue: "Total Amount" })}</p>
                       <p className="text-base font-bold text-green-700 mt-1">₹{parseFloat(orderDetails.totalAmount || 0).toFixed(2)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Ordered On</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{t("orderedOn", { defaultValue: "Ordered On" })}</p>
                       <p className="text-sm font-semibold text-gray-700 mt-1">
                         {new Date(orderDetails.createdAt).toLocaleDateString("en-IN", {
                           day: "numeric",
@@ -521,7 +535,7 @@ function Orders() {
                         <div className="flex items-center justify-between gap-4 mb-3">
                           <h4 className="font-bold text-gray-800 flex items-center gap-2">
                             <ShoppingBag size={18} className="text-green-600" />
-                            Items Summary ({orderDetails.OrderItems?.length || 0})
+                            {t("itemsSummary", { defaultValue: "Items Summary" })} ({orderDetails.OrderItems?.length || 0})
                           </h4>
                           {orderDetails.status === "PENDING" && (
                             <button
@@ -529,7 +543,7 @@ function Orders() {
                               onClick={startEditing}
                               className="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-xl font-bold border border-green-200 transition"
                             >
-                              Edit Items
+                              {t("editItems", { defaultValue: "Edit Items" })}
                             </button>
                           )}
                         </div>
@@ -593,10 +607,10 @@ function Orders() {
                               {/* Info */}
                               <div className="flex-1 min-w-0">
                                 <h5 className="font-bold text-gray-800 text-sm truncate">
-                                  {item.Product?.name || "Product Unavailable"}
+                                  {item.Product?.name || t("productUnavailable", { defaultValue: "Product Unavailable" })}
                                 </h5>
                                 <p className="text-xs text-gray-400">{item.Product?.unit || ""}</p>
-                                <p className="text-xs font-semibold text-gray-500 mt-0.5">₹{parseFloat(item.price || 0).toFixed(2)} each</p>
+                                <p className="text-xs font-semibold text-gray-500 mt-0.5">₹{parseFloat(item.price || 0).toFixed(2)} {t("each", { defaultValue: "each" })}</p>
                               </div>
 
                               {/* Quantity control */}
@@ -634,10 +648,10 @@ function Orders() {
 
                         {/* Add Product Section */}
                         <div className="relative border border-dashed border-gray-200 rounded-2xl p-4 bg-gray-50/50 mb-4">
-                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">Add product to order</label>
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">{t("addProductToOrder", { defaultValue: "Add product to order" })}</label>
                           <input
                             type="text"
-                            placeholder="Search product to add..."
+                            placeholder={t("searchProductToAddPlaceholder", { defaultValue: "Search product to add..." })}
                             value={productSearchQuery}
                             onChange={(e) => {
                               setProductSearchQuery(e.target.value);
@@ -698,7 +712,7 @@ function Orders() {
                                   </button>
                                 ))}
                               {allProductsForEdit.filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()) && p.isActive && p.stock > 0).length === 0 && (
-                                <div className="p-3 text-xs text-gray-400 text-center italic">No in-stock products match search</div>
+                                <div className="p-3 text-xs text-gray-400 text-center italic">{t("noInStockProductsSearch", { defaultValue: "No in-stock products match search" })}</div>
                               )}
                             </div>
                           )}
@@ -711,7 +725,7 @@ function Orders() {
                         )}
 
                         <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between mb-4">
-                          <span className="font-bold text-gray-700">Estimated Total:</span>
+                          <span className="font-bold text-gray-700">{t("estimatedTotal", { defaultValue: "Estimated Total" })}:</span>
                           <span className="text-xl font-extrabold text-green-700">₹{editItemsState.reduce((sum, item) => sum + parseFloat(item.price || 0) * item.quantity, 0).toFixed(2)}</span>
                         </div>
 
@@ -721,7 +735,7 @@ function Orders() {
                             onClick={() => setIsEditingItems(false)}
                             className="px-4 py-2 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition"
                           >
-                            Cancel
+                            {t("cancel", { defaultValue: "Cancel" })}
                           </button>
                           <button
                             type="button"
@@ -732,7 +746,7 @@ function Orders() {
                             {editItemsSaving ? (
                               <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             ) : null}
-                            Save Changes
+                            {t("saveChanges", { defaultValue: "Save Changes" })}
                           </button>
                         </div>
                       </>
@@ -748,7 +762,7 @@ function Orders() {
                 onClick={() => setSelectedOrderId(null)}
                 className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition"
               >
-                Close Details
+                {t("closeDetails", { defaultValue: "Close Details" })}
               </button>
             </div>
           </div>
@@ -763,9 +777,9 @@ function Orders() {
               <AlertTriangle size={32} className="text-red-500" />
             </div>
 
-            <h3 className="text-lg font-bold text-gray-800">Cancel Order #{cancellingOrderId}?</h3>
+            <h3 className="text-lg font-bold text-gray-800">{t("cancelOrderQuestion", { id: cancellingOrderId, defaultValue: `Cancel Order #${cancellingOrderId}?` })}</h3>
             <p className="text-gray-500 text-sm mt-2">
-              Are you sure you want to cancel this order? This will release the products back to active inventory. This action cannot be undone.
+              {t("cancelOrderConfirmMsg", { defaultValue: "Are you sure you want to cancel this order? This will release the products back to active inventory. This action cannot be undone." })}
             </p>
 
             {cancelError && (
@@ -780,7 +794,7 @@ function Orders() {
                 disabled={cancelLoading}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-sm transition"
               >
-                Go Back
+                {t("goBack", { defaultValue: "Go Back" })}
               </button>
               <button
                 onClick={handleCancelOrder}
@@ -790,10 +804,10 @@ function Orders() {
                 {cancelLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Cancelling...
+                    {t("cancelling", { defaultValue: "Cancelling..." })}
                   </>
                 ) : (
-                  "Confirm Cancel"
+                  t("confirmCancel", { defaultValue: "Confirm Cancel" })
                 )}
               </button>
             </div>

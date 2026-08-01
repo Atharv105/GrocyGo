@@ -4,7 +4,8 @@ import API from "../../services/api";
 import CloudinaryGalleryModal from "./CloudinaryGalleryModal";
 
 function AddCategoryModal({ isOpen, onClose, onRefresh }) {
-  const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [nameMr, setNameMr] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(""); // Emojis like "🍊" or image URL
   const [loading, setLoading] = useState(false);
@@ -63,27 +64,29 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
   };
 
   useEffect(() => {
-    autoSelectImage(name);
-  }, [name, cloudinaryCategories]);
+    autoSelectImage(nameEn);
+  }, [nameEn, cloudinaryCategories]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim()) {
-      alert("Category name is required");
+    if (!nameEn.trim() || !nameMr.trim()) {
+      alert("English and Marathi category names are required");
       return;
     }
 
     try {
       setLoading(true);
       await API.post("/categories", {
-        name: name.trim(),
+        name_en: nameEn.trim(),
+        name_mr: nameMr.trim(),
         description: description.trim(),
         image: image.trim() || "📦",
       });
 
       alert("Category created successfully!");
-      setName("");
+      setNameEn("");
+      setNameMr("");
       setDescription("");
       setImage("");
       onRefresh();
@@ -96,11 +99,11 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
     }
   };
 
-  const suggestions = name
+  const suggestions = nameEn
     ? cloudinaryCategories
         .map((c) => c.folderName)
         .filter((val, index, self) => self.indexOf(val) === index)
-        .filter((folder) => folder.toLowerCase().includes(name.toLowerCase()))
+        .filter((folder) => folder.toLowerCase().includes(nameEn.toLowerCase()))
         .slice(0, 5)
     : [];
 
@@ -122,14 +125,14 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Category Name */}
+          {/* Category Name (English) */}
           <div className="relative">
-            <label className="font-medium text-gray-700">Category Name *</label>
+            <label className="font-medium text-gray-700">Category Name (English) *</label>
             <input
               type="text"
-              value={name}
+              value={nameEn}
               onChange={(e) => {
-                setName(e.target.value);
+                setNameEn(e.target.value);
                 setShowSuggestions(true);
                 setActiveSuggestionIndex(-1);
               }}
@@ -145,14 +148,14 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
                 } else if (e.key === "Enter") {
                   if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
                     e.preventDefault();
-                    setName(suggestions[activeSuggestionIndex]);
+                    setNameEn(suggestions[activeSuggestionIndex]);
                     setShowSuggestions(false);
                   }
                 } else if (e.key === "Escape") {
                   setShowSuggestions(false);
                 }
               }}
-              placeholder="Enter Category Name (e.g., Vegetables)"
+              placeholder="Enter English Name (e.g., Vegetables)"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
               required
             />
@@ -164,7 +167,7 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      setName(folder);
+                      setNameEn(folder);
                       setShowSuggestions(false);
                     }}
                     className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
@@ -177,6 +180,19 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Category Name (Marathi) */}
+          <div>
+            <label className="font-medium text-gray-700">Category Name (Marathi) *</label>
+            <input
+              type="text"
+              value={nameMr}
+              onChange={(e) => setNameMr(e.target.value)}
+              placeholder="मराठी नाव प्रविष्ट करा (उदा. भाज्या)"
+              className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+              required
+            />
           </div>
 
           {/* Description */}
@@ -261,7 +277,7 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
             setGalleryOpen(false);
           }}
           initialTab="categories"
-          currentCategoryName={name}
+          currentCategoryName={nameEn}
         />
       )}
     </div>

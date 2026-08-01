@@ -10,14 +10,38 @@ const Product = sequelize.define(
       autoIncrement: true,
     },
 
-    name: {
+    name_en: {
       type: DataTypes.STRING,
       allowNull: false,
     },
 
-    description: {
+    name_mr: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    name: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue("name_en");
+      },
+    },
+
+    description_en: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+
+    description_mr: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    description: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue("description_en");
+      },
     },
 
     price: {

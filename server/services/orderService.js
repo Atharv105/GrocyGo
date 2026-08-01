@@ -240,7 +240,8 @@ const getOrderById = async (userId, orderId) => {
             model: Product,
             attributes: [
               "id",
-              "name",
+              "name_en",
+              "name_mr",
               "image",
               "unit",
             ],
@@ -417,7 +418,8 @@ const getAdminOrderById = async (orderId) => {
             model: Product,
             attributes: [
               "id",
-              "name",
+              "name_en",
+              "name_mr",
               "image",
               "unit",
             ],
