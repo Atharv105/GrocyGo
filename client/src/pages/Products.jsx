@@ -76,11 +76,39 @@ function Products() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [adding, setAdding] = useState(null);
   const [toast, setToast] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt-DESC");
+  const [inStockOnly, setInStockOnly] = useState(false);
+
+  // Suggestions State
+  const [allProductsForSuggestions, setAllProductsForSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const fetchAllProductsForSuggestions = async () => {
+    try {
+      const res = await getAllProducts({ limit: 1000 });
+      if (res.success) {
+        setAllProductsForSuggestions(res.data.products || []);
+      }
+    } catch (err) {
+      console.error("Failed to load products for suggestions:", err);
+    }
+  };
 
   const fetchProducts = async (params = {}) => {
     try {
       setLoading(true);
-      const res = await getAllProducts({ page, limit: 12, search, categoryId: selectedCategory, ...params });
+      const [sort, order] = sortBy.split("-");
+      const res = await getAllProducts({
+        page,
+        limit: 12,
+        search,
+        categoryId: selectedCategory,
+        sort,
+        order,
+        inStock: inStockOnly ? "true" : "false",
+        ...params
+      });
       if (res.success) {
         setProducts(res.data.products);
         setTotalPages(res.data.totalPages);
@@ -106,11 +134,12 @@ function Products() {
 
   useEffect(() => {
     fetchCategories();
+    fetchAllProductsForSuggestions();
   }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, [page, selectedCategory, search]);
+  }, [page, selectedCategory, search, sortBy, inStockOnly]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -142,6 +171,12 @@ function Products() {
     }
   };
 
+  const suggestions = searchInput
+    ? allProductsForSuggestions
+        .filter(p => p.name.toLowerCase().includes(searchInput.toLowerCase()))
+        .slice(0, 5)
+    : [];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Toast */}
@@ -165,10 +200,59 @@ function Products() {
             <input
               type="text"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+                setShowSuggestions(true);
+                setActiveSuggestionIndex(-1);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                } else if (e.key === "Enter") {
+                  if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                    e.preventDefault();
+                    const selected = suggestions[activeSuggestionIndex];
+                    setSearchInput(selected.name);
+                    setSearch(selected.name);
+                    setPage(1);
+                    setShowSuggestions(false);
+                  }
+                } else if (e.key === "Escape") {
+                  setShowSuggestions(false);
+                }
+              }}
               placeholder="Search products..."
               className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300"
             />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
+                {suggestions.map((p, idx) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevents blur before click registers
+                      setSearchInput(p.name);
+                      setSearch(p.name);
+                      setPage(1);
+                      setShowSuggestions(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                      idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
+                    }`}
+                  >
+                    <span>{p.name}</span>
+                    <span className="text-green-700 font-bold">₹{parseFloat(p.price).toFixed(2)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button
             type="submit"
@@ -224,19 +308,52 @@ function Products() {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Results count */}
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-gray-500 text-sm">
-                {loading ? "Loading..." : `${totalProducts} products found`}
-              </p>
-              {search && (
-                <button
-                  onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}
-                  className="text-sm text-red-500 hover:underline font-medium"
+            {/* Results count & Sort/Stock filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <p className="text-gray-500 text-sm font-semibold">
+                  {loading ? "Loading..." : `${totalProducts} products found`}
+                </p>
+                {search && (
+                  <button
+                    onClick={() => { setSearch(""); setSearchInput(""); setPage(1); }}
+                    className="text-xs text-red-500 hover:underline font-bold"
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Stock filter */}
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={inStockOnly}
+                    onChange={(e) => {
+                      setInStockOnly(e.target.checked);
+                      setPage(1);
+                    }}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                  />
+                  In-Stock Only
+                </label>
+
+                {/* Sort selector */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setPage(1);
+                  }}
+                  className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:border-green-500 outline-none cursor-pointer shadow-sm"
                 >
-                  Clear search
-                </button>
-              )}
+                  <option value="createdAt-DESC">Newest</option>
+                  <option value="price-ASC">Price: Low to High</option>
+                  <option value="price-DESC">Price: High to Low</option>
+                  <option value="name-ASC">Name: A to Z</option>
+                </select>
+              </div>
             </div>
 
             {/* Products Grid */}

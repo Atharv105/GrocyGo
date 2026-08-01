@@ -157,6 +157,17 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
     }
   };
 
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const suggestions = name
+    ? cloudinaryProducts
+        .map((p) => p.folderName)
+        .filter((val, index, self) => self.indexOf(val) === index)
+        .filter((folder) => folder.toLowerCase().includes(name.toLowerCase()))
+        .slice(0, 5)
+    : [];
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
@@ -172,16 +183,60 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-2 gap-4">
             {/* Product Name */}
-            <div className="col-span-2">
+            <div className="col-span-2 relative">
               <label className="font-medium text-gray-700">Product Name *</label>
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setShowSuggestions(true);
+                  setActiveSuggestionIndex(-1);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                  } else if (e.key === "Enter") {
+                    if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                      e.preventDefault();
+                      setName(suggestions[activeSuggestionIndex]);
+                      setShowSuggestions(false);
+                    }
+                  } else if (e.key === "Escape") {
+                    setShowSuggestions(false);
+                  }
+                }}
                 placeholder="Enter Product Name (e.g., Alphonso Mango)"
                 className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
                 required
               />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-48">
+                  {suggestions.map((folder, idx) => (
+                    <button
+                      key={folder}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setName(folder);
+                        setShowSuggestions(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                        idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
+                      }`}
+                    >
+                      <span>{folder}</span>
+                      <span className="text-[10px] text-green-600 font-semibold">Suggested Template</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Price */}

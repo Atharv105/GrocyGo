@@ -7,7 +7,7 @@ import { AuthContext } from "../../context/AuthContext";
 function EditProfile() {
   const navigate = useNavigate();
   const { updateProfileState, user } = useContext(AuthContext);
-  const isNewOrIncomplete = !user || user.name === "User" || !user.address;
+  const isNewOrIncomplete = !user || user.name === "User";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -52,10 +52,7 @@ function EditProfile() {
       return;
     }
 
-    if (!formData.address.trim()) {
-      alert("Address is required.");
-      return;
-    }
+
 
     try {
       const res = await API.put("/auth/profile", formData);

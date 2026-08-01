@@ -11,14 +11,20 @@ const { checkout,
     getAllOrders,
     getAdminOrderById,
     updateOrderStatus,
-    updatePaymentStatus
+    updatePaymentStatus,
+    updateOrder,
+    updateMyOrder
 } = require("../controllers/orderController");
 
+const { checkoutValidation } = require("../validations/orderValidation");
+const validationMiddleware = require("../middleware/validationMiddleware");
+
 // CUSTOMER ROUTES
-router.post("/checkout", authMiddleware, checkout);
+router.post("/checkout", authMiddleware, checkoutValidation, validationMiddleware, checkout);
 router.get("/my-orders", authMiddleware, getMyOrders);
 router.get("/:id", authMiddleware, getOrderById);
 router.put("/:id/cancel", authMiddleware, cancelOrder);
+router.put("/:id", authMiddleware, updateMyOrder);
 
 // ADMIN ROUTES
 router.get(
@@ -47,6 +53,13 @@ router.patch(
   authMiddleware,
   adminMiddleware,
   updatePaymentStatus
+);
+
+router.put(
+  "/admin/orders/:id",
+  authMiddleware,
+  adminMiddleware,
+  updateOrder
 );
 
 module.exports = router;
