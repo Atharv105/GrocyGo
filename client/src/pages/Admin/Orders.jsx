@@ -38,6 +38,7 @@ function AdminOrders() {
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
+  const [selectedDate, setSelectedDate] = useState("");
 
   // Detail Modal State
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -217,19 +218,24 @@ function AdminOrders() {
   };
 
   // Statistics Calculations
+  // Filter by selected date (pickup slot date)
+  const dateFilteredOrders = selectedDate
+    ? orders.filter(order => order.Slot && order.Slot.date === selectedDate)
+    : orders;
+
   const stats = {
-    total: orders.length,
-    pending: orders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
-    confirmed: orders.filter(o => o.status === "CONFIRMED").length,
-    completed: orders.filter(o => o.status === "COMPLETED").length,
-    cancelled: orders.filter(o => o.status === "CANCELLED").length,
-    revenue: orders
+    total: dateFilteredOrders.length,
+    pending: dateFilteredOrders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
+    confirmed: dateFilteredOrders.filter(o => o.status === "CONFIRMED").length,
+    completed: dateFilteredOrders.filter(o => o.status === "COMPLETED").length,
+    cancelled: dateFilteredOrders.filter(o => o.status === "CANCELLED").length,
+    revenue: dateFilteredOrders
       .filter(o => o.paymentStatus === "PAID")
       .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0)
   };
 
   // Filters & Search logic
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = dateFilteredOrders.filter((order) => {
     const matchesTab = activeTab === "ALL" || order.status === activeTab;
     
     const term = searchTerm.toLowerCase();
@@ -322,16 +328,39 @@ function AdminOrders() {
       {/* Toolbar & Filters */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by ID, name, mobile..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
-            />
+          {/* Search bar & Date Filter */}
+          <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-4 max-w-2xl">
+            <div className="relative flex-1 max-w-md">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by ID, name, mobile..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 pl-11 pr-4 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition"
+              />
+            </div>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Pickup Date:</span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+              />
+              {selectedDate && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate("")}
+                  className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2.5 rounded-2xl font-bold transition flex items-center gap-1"
+                  title="Clear Date"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter Tabs */}

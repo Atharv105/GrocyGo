@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FaChartBar, FaBoxes, FaTags, FaShoppingBag, FaDollarSign, FaCalculator } from "react-icons/fa";
 import API from "../../services/api";
 
@@ -8,18 +8,8 @@ function AdminReports() {
     totalCategories: 0,
     lowStock: 0,
   });
-  const [orderStats, setOrderStats] = useState({
-    totalRevenue: 0,
-    aov: 0,
-    orderCount: 0,
-  });
-  const [statusDistribution, setStatusDistribution] = useState({
-    PENDING: 0,
-    CONFIRMED: 0,
-    COMPLETED: 0,
-    CANCELLED: 0,
-  });
-  const [dailySales, setDailySales] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
@@ -30,7 +20,7 @@ function AdminReports() {
         const [prodRes, catRes, orderRes] = await Promise.all([
           API.get("/products?limit=1000"),
           API.get("/categories"),
-          API.get("/orders/admin/orders"),
+          API.get("/orders/admin/orders?limit=1000"),
         ]);
 
         // Products and categories
@@ -42,48 +32,9 @@ function AdminReports() {
           lowStock: products.filter((p) => p.stock <= 5).length,
         });
 
-        // Orders processing
-        const orders = orderRes.data.data || [];
-        const paidOrders = orders.filter((o) => o.paymentStatus === "PAID");
-        const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
-        const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
-        
-        setOrderStats({
-          totalRevenue,
-          aov,
-          orderCount: orders.length,
-        });
-
-        // Calculate status distribution
-        const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
-        orders.forEach((o) => {
-          if (dist[o.status] !== undefined) {
-            dist[o.status]++;
-          }
-        });
-        setStatusDistribution(dist);
-
-        // Calculate last 7 days sales map (initialized to 0)
-        const dailyMap = {};
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().split("T")[0];
-          dailyMap[dateStr] = {
-            dateLabel: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
-            revenue: 0,
-          };
-        }
-
-        // Fill sales data
-        orders.forEach((o) => {
-          const dateStr = o.createdAt.split("T")[0];
-          if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
-            dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
-          }
-        });
-
-        setDailySales(Object.values(dailyMap));
+        // Set all orders
+        const orders = orderRes.data.data?.orders || orderRes.data.data || [];
+        setAllOrders(orders);
       } catch (err) {
         console.error("Error loading report analytics:", err);
       } finally {
@@ -94,17 +45,67 @@ function AdminReports() {
     fetchReportData();
   }, []);
 
+  const reportData = useMemo(() => {
+    // 1. Filter orders by selected slot date
+    const filteredOrders = selectedDate
+      ? allOrders.filter((o) => o.Slot && o.Slot.date === selectedDate)
+      : allOrders;
+
+    // 2. Calculate paid orders revenue, AOV, count
+    const paidOrders = filteredOrders.filter((o) => o.paymentStatus === "PAID");
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+    const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
+    const orderCount = filteredOrders.length;
+
+    // 3. Status distribution
+    const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
+    filteredOrders.forEach((o) => {
+      if (dist[o.status] !== undefined) {
+        dist[o.status]++;
+      }
+    });
+
+    // 4. Calculate last 7 days sales map leading to selected date (or today)
+    const chartEndDate = selectedDate ? new Date(selectedDate) : new Date();
+    const dailyMap = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(chartEndDate);
+      d.setDate(chartEndDate.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      dailyMap[dateStr] = {
+        dateLabel: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
+        revenue: 0,
+      };
+    }
+
+    // Fill sales data using slot dates (if present) or order creation dates, but only for paid orders
+    allOrders.forEach((o) => {
+      const dateStr = o.Slot ? o.Slot.date : o.createdAt.split("T")[0];
+      if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
+        dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
+      }
+    });
+
+    return {
+      totalRevenue,
+      aov,
+      orderCount,
+      statusDistribution: dist,
+      dailySales: Object.values(dailyMap),
+    };
+  }, [allOrders, selectedDate]);
+
   const statCards = [
-    { label: "Total Revenue", value: `₹${orderStats.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaDollarSign />, color: "bg-emerald-500", text: "Paid earnings" },
-    { label: "Average Order Value (AOV)", value: `₹${orderStats.aov.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaCalculator />, color: "bg-blue-500", text: "Revenue per paid basket" },
-    { label: "Total Orders", value: orderStats.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: "Placed order logs" },
+    { label: "Total Revenue", value: `₹${reportData.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaDollarSign />, color: "bg-emerald-500", text: "Paid earnings" },
+    { label: "Average Order Value (AOV)", value: `₹${reportData.aov.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaCalculator />, color: "bg-blue-500", text: "Revenue per paid basket" },
+    { label: "Total Orders", value: reportData.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: "Placed order logs" },
     { label: "Total Products", value: stats.totalProducts.toString(), icon: <FaBoxes />, color: "bg-green-500", text: "Active catalog items" },
     { label: "Total Categories", value: stats.totalCategories.toString(), icon: <FaTags />, color: "bg-orange-500", text: "Product groups" },
     { label: "Low Stock Alerts", value: stats.lowStock.toString(), icon: <FaBoxes />, color: "bg-red-500", text: "5 units or less" },
   ];
 
   // SVG Chart configurations
-  const maxRevenue = Math.max(...dailySales.map((d) => d.revenue), 100); // fallback to 100
+  const maxRevenue = Math.max(...reportData.dailySales.map((d) => d.revenue), 100); // fallback to 100
   const chartHeight = 150;
   const barWidth = 44;
   const gap = 30;
@@ -112,9 +113,32 @@ function AdminReports() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Reports & Analytics</h1>
-        <p className="text-gray-500 mt-2 text-base">Visualize financial metrics and category catalogs.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Reports & Analytics</h1>
+          <p className="text-gray-500 mt-2 text-base">Visualize financial metrics and category catalogs.</p>
+        </div>
+
+        {/* Date Filter */}
+        <div className="flex items-center gap-2 self-start sm:self-center bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Slot Date:</span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+          />
+          {selectedDate && (
+            <button
+              type="button"
+              onClick={() => setSelectedDate("")}
+              className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1"
+              title="Clear Date"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -140,7 +164,7 @@ function AdminReports() {
         <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
-              <FaChartBar className="text-green-600" /> Daily Revenue (Last 7 Days)
+              <FaChartBar className="text-green-600" /> {selectedDate ? `Daily Revenue (7 Days Ending ${new Date(selectedDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })})` : "Daily Revenue (Last 7 Days)"}
             </h2>
             <p className="text-xs text-gray-400 mb-6">Excludes pending or cancelled orders.</p>
           </div>
@@ -148,7 +172,7 @@ function AdminReports() {
           <div className="h-64 flex items-end justify-center">
             {loading ? (
               <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-20" />
-            ) : dailySales.length === 0 ? (
+            ) : reportData.dailySales.length === 0 ? (
               <div className="text-gray-400 text-sm mb-20">No sales records to plot.</div>
             ) : (
               <div className="w-full h-full relative">
@@ -163,8 +187,8 @@ function AdminReports() {
                   <text x="60" y="44" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue).toLocaleString()}</text>
                   <text x="60" y="119" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue / 2).toLocaleString()}</text>
                   <text x="60" y="194" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹0</text>
-
-                  {dailySales.map((day, index) => {
+ 
+                  {reportData.dailySales.map((day, index) => {
                     const barHeight = (day.revenue / maxRevenue) * chartHeight;
                     const x = paddingLeft + index * (barWidth + gap) + 15;
                     const y = 190 - barHeight;
@@ -258,8 +282,8 @@ function AdminReports() {
             </div>
           ) : (
             <div className="space-y-5 flex-1 flex flex-col justify-center">
-              {Object.entries(statusDistribution).map(([status, count]) => {
-                const total = orderStats.orderCount || 1;
+              {Object.entries(reportData.statusDistribution).map(([status, count]) => {
+                const total = reportData.orderCount || 1;
                 const percentage = ((count / total) * 100).toFixed(0);
                 
                 let progressColor = "bg-yellow-500";

@@ -4,13 +4,31 @@ const { Op , col } = require("sequelize");
 const dayjs = require("dayjs");
 
 const deactivatePastSlots = async () => {
-    const todayStr = dayjs().format("YYYY-MM-DD");
+    const now = dayjs();
+    const todayStr = now.format("YYYY-MM-DD");
+    const currentTimeStr = now.format("HH:mm:ss");
+
+    // Deactivate slots from previous days
     await Slot.update(
         { isActive: false },
         {
             where: {
                 date: {
                     [Op.lt]: todayStr,
+                },
+                isActive: true,
+            },
+        }
+    );
+
+    // Deactivate slots of today that are in the past
+    await Slot.update(
+        { isActive: false },
+        {
+            where: {
+                date: todayStr,
+                startTime: {
+                    [Op.lt]: currentTimeStr,
                 },
                 isActive: true,
             },
