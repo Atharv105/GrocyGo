@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FaChartBar, FaBoxes, FaTags, FaShoppingBag, FaDollarSign, FaCalculator } from "react-icons/fa";
 import API from "../../services/api";
 
@@ -133,7 +133,7 @@ function AdminReports() {
   ];
 
   // SVG Chart configurations
-  const maxRevenue = Math.max(...dailySales.map((d) => d.revenue), 100); // fallback to 100
+  const maxRevenue = Math.max(...reportData.dailySales.map((d) => d.revenue), 100); // fallback to 100
   const chartHeight = 150;
   const numDays = dailySales.length || 7;
   const paddingLeft = 75;
@@ -203,7 +203,7 @@ function AdminReports() {
           <div className="h-64 flex items-end justify-center">
             {loading ? (
               <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-20" />
-            ) : dailySales.length === 0 ? (
+            ) : reportData.dailySales.length === 0 ? (
               <div className="text-gray-400 text-sm mb-20">No sales records to plot.</div>
             ) : (
               <div className="w-full h-full relative">
@@ -218,8 +218,8 @@ function AdminReports() {
                   <text x="60" y="44" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue).toLocaleString()}</text>
                   <text x="60" y="119" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹{Math.round(maxRevenue / 2).toLocaleString()}</text>
                   <text x="60" y="194" textAnchor="end" className="text-[10px] fill-gray-400 font-bold">₹0</text>
-
-                  {dailySales.map((day, index) => {
+ 
+                  {reportData.dailySales.map((day, index) => {
                     const barHeight = (day.revenue / maxRevenue) * chartHeight;
                     const x = paddingLeft + index * (barWidth + gap) + gap / 2;
                     const y = 190 - barHeight;
@@ -313,8 +313,8 @@ function AdminReports() {
             </div>
           ) : (
             <div className="space-y-5 flex-1 flex flex-col justify-center">
-              {Object.entries(statusDistribution).map(([status, count]) => {
-                const total = orderStats.orderCount || 1;
+              {Object.entries(reportData.statusDistribution).map(([status, count]) => {
+                const total = reportData.orderCount || 1;
                 const percentage = ((count / total) * 100).toFixed(0);
                 
                 let progressColor = "bg-yellow-500";

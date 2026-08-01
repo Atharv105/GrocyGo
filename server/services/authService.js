@@ -107,7 +107,7 @@ const profile = async (userId) => {
 };
 
 // Update Profile
-const updateProfile = async (userId, { name, mobile }) => {
+const updateProfile = async (userId, { name, mobile, address }) => {
 
     if (!name || !mobile) {
         throw {
@@ -145,6 +145,7 @@ const updateProfile = async (userId, { name, mobile }) => {
 
     user.name = name;
     user.mobile = mobile;
+    user.address = address;
 
     await user.save();
 
@@ -152,6 +153,7 @@ const updateProfile = async (userId, { name, mobile }) => {
         id: user.id,
         name: user.name,
         mobile: user.mobile,
+        address: user.address,
         role: user.role,
     };
 };
@@ -304,13 +306,16 @@ const verifyOtp = async ({ mobile, otp, name, password }) => {
     },
   });
 
+  let isNewUser = false;
+
   // Register New User
   if (!user) {
     user = await User.create({
-      name: name || mobile,
+      name: name || "User",
       mobile,
       role: "CUSTOMER",
     });
+    isNewUser = true;
   } else {
     // If Admin, verify password is correct
     if (user.role === "ADMIN") {
@@ -348,6 +353,7 @@ const verifyOtp = async ({ mobile, otp, name, password }) => {
     user,
     accessToken,
     refreshToken,
+    isNewUser,
   };
 };
 

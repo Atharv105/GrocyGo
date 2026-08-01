@@ -324,19 +324,24 @@ function AdminOrders() {
   };
 
   // Statistics Calculations
+  // Filter by selected date (pickup slot date)
+  const dateFilteredOrders = selectedDate
+    ? orders.filter(order => order.Slot && order.Slot.date === selectedDate)
+    : orders;
+
   const stats = {
-    total: orders.length,
-    pending: orders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
-    confirmed: orders.filter(o => o.status === "CONFIRMED").length,
-    completed: orders.filter(o => o.status === "COMPLETED").length,
-    cancelled: orders.filter(o => o.status === "CANCELLED").length,
-    revenue: orders
+    total: dateFilteredOrders.length,
+    pending: dateFilteredOrders.filter(o => o.status === "PENDING" || o.status === "CONFIRMED").length,
+    confirmed: dateFilteredOrders.filter(o => o.status === "CONFIRMED").length,
+    completed: dateFilteredOrders.filter(o => o.status === "COMPLETED").length,
+    cancelled: dateFilteredOrders.filter(o => o.status === "CANCELLED").length,
+    revenue: dateFilteredOrders
       .filter(o => o.paymentStatus === "PAID")
       .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0)
   };
 
   // Filters & Search logic
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = dateFilteredOrders.filter((order) => {
     const matchesTab = activeTab === "ALL" || order.status === activeTab;
 
     const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;

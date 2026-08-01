@@ -69,13 +69,15 @@ function AdminCustomers() {
     fetchCustomersFromOrders();
   }, []);
 
-  // Filter list by search term
+  // Filter list by search term and selected date
   const filteredCustomers = customers.filter((c) => {
     const term = search.toLowerCase();
-    return (
+    const matchesSearch =
       c.name.toLowerCase().includes(term) ||
-      c.mobile.includes(term)
-    );
+      c.mobile.includes(term);
+
+    const matchesDate = !selectedDate || c.orders.some(o => o.Slot && o.Slot.date === selectedDate);
+    return matchesSearch && matchesDate;
   });
 
   return (
@@ -160,7 +162,7 @@ function AdminCustomers() {
           )}
         </div>
 
-        <div className="text-sm font-semibold text-gray-500 self-end sm:self-center">
+        <div className="text-sm font-semibold text-gray-500 self-end md:self-center shrink-0">
           Showing <span className="text-gray-800">{filteredCustomers.length}</span> customers
         </div>
       </div>
@@ -188,65 +190,99 @@ function AdminCustomers() {
                 <tr className="border-b border-gray-100 bg-gray-50/50 text-gray-400 text-xs font-semibold uppercase tracking-wider">
                   <th className="py-3.5 pl-6">Customer Info</th>
                   <th className="py-3.5">Mobile</th>
-                  <th className="py-3.5">Orders Count</th>
-                  <th className="py-3.5">Total Spent</th>
-                  <th className="py-3.5 pr-6">Last Active</th>
+                  <th className="py-3.5">{selectedDate ? "Orders on Date" : "Orders Count"}</th>
+                  <th className="py-3.5">{selectedDate ? "Spent on Date" : "Total Spent"}</th>
+                  <th className="py-3.5 pr-6">{selectedDate ? "Slot Timings" : "Last Active"}</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-gray-50">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50/40 transition-colors">
-                    {/* Customer Info */}
-                    <td className="py-4 pl-6 flex items-center gap-3">
-                      <FaUserCircle className="text-gray-300 text-3xl" />
-                      <div>
-                        <p className="font-bold text-gray-800">{customer.name}</p>
-                        <p className="text-[10px] text-gray-400">ID: #{customer.id}</p>
-                      </div>
-                    </td>
+                {filteredCustomers.map((customer) => {
+                  let orderCount = customer.orderCount;
+                  let totalSpent = customer.totalSpent;
+                  let activeText = "";
 
-                    {/* Mobile */}
-                    <td className="py-4">
-                      <div className="flex items-center gap-1.5 text-gray-600">
-                        <FaPhoneAlt size={11} className="text-gray-300" />
-                        <span className="font-medium text-xs">{customer.mobile}</span>
-                      </div>
-                    </td>
+                  if (!selectedDate) {
+                    activeText = new Date(customer.lastOrderDate).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                  } else {
+                    const dateOrders = customer.orders.filter(
+                      (o) => o.Slot && o.Slot.date === selectedDate
+                    );
+                    orderCount = dateOrders.length;
+                    totalSpent = dateOrders
+                      .filter((o) => o.status !== "CANCELLED")
+                      .reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
 
-                    {/* Orders Count */}
-                    <td className="py-4">
-                      <div className="flex items-center gap-1.5 text-gray-700">
-                        <FaShoppingBag size={12} className="text-gray-300" />
-                        <span className="font-semibold">{customer.orderCount} order{customer.orderCount !== 1 ? "s" : ""}</span>
-                      </div>
-                    </td>
+                    const formatTime12h = (timeStr) => {
+                      if (!timeStr) return "";
+                      const [hour, minute] = timeStr.split(":");
+                      let hr = parseInt(hour, 10);
+                      const ampm = hr >= 12 ? "PM" : "AM";
+                      hr = hr % 12;
+                      hr = hr ? hr : 12;
+                      return `${hr.toString().padStart(2, "0")}:${minute} ${ampm}`;
+                    };
 
-                    {/* Total Spent */}
-                    <td className="py-4">
-                      <div className="flex items-center gap-0.5 text-green-700 font-bold">
-                        <span>₹</span>
-                        <span>{customer.totalSpent.toFixed(2)}</span>
-                      </div>
-                    </td>
+                    activeText = dateOrders
+                      .map((o) =>
+                        o.Slot
+                          ? `${formatTime12h(o.Slot.startTime)} - ${formatTime12h(o.Slot.endTime)}`
+                          : "No Slot"
+                      )
+                      .join(", ");
+                  }
 
-                    {/* Last Active */}
-                    <td className="py-4 pr-6 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <FaCalendarAlt size={12} className="text-gray-300" />
-                        <span>
-                          {new Date(customer.lastOrderDate).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                  return (
+                    <tr key={customer.id} className="hover:bg-gray-50/40 transition-colors">
+                      {/* Customer Info */}
+                      <td className="py-4 pl-6 flex items-center gap-3">
+                        <FaUserCircle className="text-gray-300 text-3xl" />
+                        <div>
+                          <p className="font-bold text-gray-800">{customer.name}</p>
+                          <p className="text-[10px] text-gray-400">ID: #{customer.id}</p>
+                        </div>
+                      </td>
+
+                      {/* Mobile */}
+                      <td className="py-4">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <FaPhoneAlt size={11} className="text-gray-300" />
+                          <span className="font-medium text-xs">{customer.mobile}</span>
+                        </div>
+                      </td>
+
+                      {/* Orders Count */}
+                      <td className="py-4">
+                        <div className="flex items-center gap-1.5 text-gray-700">
+                          <FaShoppingBag size={12} className="text-gray-300" />
+                          <span className="font-semibold">{orderCount} order{orderCount !== 1 ? "s" : ""}</span>
+                        </div>
+                      </td>
+
+                      {/* Total Spent */}
+                      <td className="py-4">
+                        <div className="flex items-center gap-0.5 text-green-700 font-bold">
+                          <span>₹</span>
+                          <span>{totalSpent.toFixed(2)}</span>
+                        </div>
+                      </td>
+
+                      {/* Last Active / Slot Timings */}
+                      <td className="py-4 pr-6 text-xs text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <FaCalendarAlt size={12} className="text-gray-300" />
+                          <span>{activeText}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
