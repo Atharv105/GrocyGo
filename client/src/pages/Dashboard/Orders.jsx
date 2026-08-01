@@ -104,6 +104,14 @@ function Orders() {
     fetchDetails();
   }, [selectedOrderId, i18n.language]);
 
+  const handleCloseDetailsModal = () => {
+    if (isEditingItems) {
+      alert(t("pleaseSaveDetails", { defaultValue: "Please save the details before closing, or click 'Cancel' inside the editor to discard." }));
+      return;
+    }
+    setSelectedOrderId(null);
+  };
+
   // Handle Order Cancellation
   const handleCancelOrder = async () => {
     if (!cancellingOrderId) return;
@@ -477,7 +485,7 @@ function Orders() {
                 <p className="text-xs text-gray-400 mt-0.5">{t("lineItemsInfo", { defaultValue: "Line items & information" })}</p>
               </div>
               <button
-                onClick={() => { setSelectedOrderId(null); setIsEditingItems(false); }}
+                onClick={handleCloseDetailsModal}
                 className="p-1.5 rounded-xl hover:bg-gray-200 transition text-gray-500"
               >
                 <X size={20} />
@@ -759,7 +767,7 @@ function Orders() {
             {/* Modal Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
               <button
-                onClick={() => setSelectedOrderId(null)}
+                onClick={handleCloseDetailsModal}
                 className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition"
               >
                 {t("closeDetails", { defaultValue: "Close Details" })}

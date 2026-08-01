@@ -186,5 +186,6 @@
   "goBack": "Go Back",
   "cancelling": "Cancelling...",
   "confirmCancel": "Confirm Cancel",
-  "paid": "PAID"
+  "paid": "PAID",
+  "pleaseSaveDetails": "Please save the details before closing, or click 'Cancel' inside the editor to discard."
 }
