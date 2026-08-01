@@ -1,10 +1,23 @@
 const { body } = require("express-validator");
 
 const createProductValidation = [
-  body("name")
+  body("name_en")
     .trim()
     .notEmpty()
-    .withMessage("Product name is required"),
+    .withMessage("English product name is required"),
+
+  body("name_mr")
+    .trim()
+    .notEmpty()
+    .withMessage("Marathi product name is required"),
+
+  body("description_en")
+    .optional()
+    .trim(),
+
+  body("description_mr")
+    .optional()
+    .trim(),
 
   body("price")
     .isFloat({ gt: 0 })

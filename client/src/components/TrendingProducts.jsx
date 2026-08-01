@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ProductCard from "./ProductCard";
 import API from "../services/api";
 
 function TrendingProducts() {
+  const { t, i18n } = useTranslation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +23,7 @@ function TrendingProducts() {
       }
     };
     fetchProducts();
-  }, []);
+  }, [i18n.language]);
 
   return (
     <section className="bg-green-50 py-20">
@@ -35,7 +37,7 @@ function TrendingProducts() {
               text-gray-800
               "
             >
-              🔥 Trending Products
+              {t("trendingProducts")}
             </h2>
 
             <p
@@ -44,7 +46,7 @@ function TrendingProducts() {
               mt-3
               "
             >
-              Most loved groceries by our customers.
+              {t("trendingProductsDesc")}
             </p>
           </div>
 
@@ -63,12 +65,12 @@ function TrendingProducts() {
             hover:bg-green-100
             "
           >
-            View All
+            {t("viewAll")}
           </Link>
         </div>
 
         {loading ? (
-          <div className="text-center mt-14 text-gray-500 text-lg">Loading products...</div>
+          <div className="text-center mt-14 text-gray-500 text-lg">{t("loadingProducts")}</div>
         ) : (
           <div
             className="

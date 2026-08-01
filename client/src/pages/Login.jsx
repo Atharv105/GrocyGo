@@ -2,8 +2,10 @@ import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShoppingBasket, Eye, EyeOff, AlertCircle, ArrowLeft, Lock } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { sendOtp, verifyOtp } = useContext(AuthContext);
 
@@ -157,8 +159,8 @@ function Login() {
         <div className="p-8 md:p-12 flex flex-col justify-center">
           {!isOtpSent ? (
             <>
-              <h2 className="text-3xl font-bold text-gray-800">Welcome Back 👋</h2>
-              <p className="text-gray-500 mt-2">Sign in to continue shopping.</p>
+              <h2 className="text-3xl font-bold text-gray-800">{t("welcomeBack")}</h2>
+              <p className="text-gray-500 mt-2">{t("signInContinue")}</p>
 
               {/* Error Banner */}
               {error && (
@@ -171,11 +173,11 @@ function Login() {
               <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
                 {/* Mobile */}
                 <div>
-                  <label className="text-gray-600 font-medium text-sm">Mobile Number</label>
+                  <label className="text-gray-600 font-medium text-sm">{t("mobileNumber")}</label>
                   <input
                     type="tel"
                     name="mobile"
-                    placeholder="Enter your 10-digit mobile number"
+                    placeholder={t("enterMobile")}
                     value={formData.mobile}
                     onChange={handleChange}
                     maxLength={10}
@@ -192,15 +194,15 @@ function Login() {
                   {loading ? (
                     <>
                       <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending OTP...
+                      {t("sendingOtp")}
                     </>
                   ) : (
-                    "Send OTP"
+                    t("sendOtp")
                   )}
                 </button>
 
                 <p className="text-center text-xs text-gray-500 mt-2">
-                  New users will be registered automatically.
+                  {t("newUsersRegister")}
                 </p>
               </form>
             </>
@@ -210,11 +212,11 @@ function Login() {
                 onClick={() => setIsOtpSent(false)}
                 className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition mb-6 w-fit text-sm font-medium"
               >
-                <ArrowLeft size={16} /> Back to Sign In
+                <ArrowLeft size={16} /> {t("backToSignIn")}
               </button>
-              <h2 className="text-3xl font-bold text-gray-800">Enter OTP 🔐</h2>
+              <h2 className="text-3xl font-bold text-gray-800">{t("enterOtp")}</h2>
               <p className="text-gray-500 mt-2">
-                We sent a verification code to <span className="font-semibold text-gray-700">+91 {formData.mobile}</span>
+                {t("weSentVerification")} <span className="font-semibold text-gray-700">+91 {formData.mobile}</span>
               </p>
 
               {/* Error Banner */}
@@ -228,10 +230,10 @@ function Login() {
               <form className="mt-6 space-y-5" onSubmit={handleVerifyOtp}>
                 {/* OTP Input */}
                 <div>
-                  <label className="text-gray-600 font-medium text-sm">One-Time Password (OTP)</label>
+                  <label className="text-gray-600 font-medium text-sm">{t("otpLabel")}</label>
                   <input
                     type="text"
-                    placeholder="Enter verification code"
+                    placeholder={t("otpPlaceholder")}
                     value={otp}
                     onChange={(e) => {
                       setError("");
@@ -251,10 +253,10 @@ function Login() {
                   {loading ? (
                     <>
                       <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Verifying...
+                      {t("verifying")}
                     </>
                   ) : (
-                    "Verify & Submit"
+                    t("verifySubmit")
                   )}
                 </button>
 

@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaClock, FaCalendarCheck, FaShoppingBag, FaArrowRight, FaCalendarAlt, FaExclamationTriangle } from "react-icons/fa";
 import * as orderService from "../../services/orderService";
+import { useTranslation } from "react-i18next";
 
 function PickupSlots() {
+  const { t, i18n } = useTranslation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -53,7 +55,7 @@ function PickupSlots() {
     };
 
     fetchBookings();
-  }, []);
+  }, [i18n.language]);
 
   const formatTime12h = (timeStr) => {
     if (!timeStr) return "";
@@ -91,8 +93,8 @@ function PickupSlots() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800">My Pickup Slots ⏰</h1>
-        <p className="text-gray-500 mt-1">Booked grocery pickup times and schedule history.</p>
+        <h1 className="text-3xl font-bold text-gray-800">{t("pickupSlots")} ⏰</h1>
+        <p className="text-gray-500 mt-1">{t("slotsDesc", { defaultValue: "Booked grocery pickup times and schedule history." })}</p>
       </div>
 
       {error && (
@@ -105,7 +107,7 @@ function PickupSlots() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-green-700 font-medium">Loading pickup slots...</p>
+          <p className="text-sm text-green-700 font-medium">{t("loadingSlots", { defaultValue: "Loading pickup slots..." })}</p>
         </div>
       ) : (
         <>
@@ -114,7 +116,7 @@ function PickupSlots() {
             <div className="bg-gradient-to-r from-orange-500 to-amber-600 rounded-3xl p-8 text-white shadow-lg shadow-orange-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-3">
                 <span className="bg-white/20 text-white font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider">
-                  Upcoming Pickup
+                  {t("upcomingPickup", { defaultValue: "Upcoming Pickup" })}
                 </span>
                 <h2 className="text-3xl font-extrabold">
                   {new Date(upcomingBooking.date).toLocaleDateString("en-IN", {
@@ -132,7 +134,7 @@ function PickupSlots() {
                     </span>
                   </div>
                   <span className="text-orange-300">•</span>
-                  <span className="text-sm font-semibold">Order #{upcomingBooking.orderId}</span>
+                  <span className="text-sm font-semibold">{t("orderNo", { defaultValue: "Order #" })}{upcomingBooking.orderId}</span>
                 </div>
               </div>
 
@@ -140,7 +142,7 @@ function PickupSlots() {
                 to="/dashboard/orders"
                 className="bg-white text-orange-600 font-bold px-6 py-3.5 rounded-xl text-sm hover:bg-orange-50 transition flex items-center justify-center gap-2 self-start md:self-auto shrink-0 shadow-md"
               >
-                View Order Details <FaArrowRight />
+                {t("viewOrderDetails", { defaultValue: "View Order Details" })} <FaArrowRight />
               </Link>
             </div>
           ) : (
@@ -149,16 +151,15 @@ function PickupSlots() {
                 <FaCalendarAlt size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-sm">No Active Pickup Slots</h3>
+                <h3 className="font-bold text-sm">{t("noActiveSlots", { defaultValue: "No Active Pickup Slots" })}</h3>
                 <p className="text-xs text-blue-700/80 mt-1 max-w-md">
-                  You don't have any pending grocery pickups scheduled. 
-                  When you shop and checkout in your cart, you can schedule a convenient queue-free pickup time!
+                  {t("noActiveSlotsDesc", { defaultValue: "You don't have any pending grocery pickups scheduled. When you shop and checkout in your cart, you can schedule a convenient queue-free pickup time!" })}
                 </p>
                 <Link
                   to="/products"
                   className="mt-3.5 inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition"
                 >
-                  Browse Products
+                  {t("startShopping")}
                 </Link>
               </div>
             </div>
@@ -166,13 +167,13 @@ function PickupSlots() {
 
           {/* Bookings History */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Booking History</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">{t("bookingHistory", { defaultValue: "Booking History" })}</h2>
 
             {bookings.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
                 <FaCalendarCheck size={40} className="text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-400 font-bold text-sm">No bookings record found</p>
-                <p className="text-gray-400 text-xs mt-1">Your slot reservation details will appear here once you place an order.</p>
+                <p className="text-gray-400 font-bold text-sm">{t("noBookingsFound", { defaultValue: "No bookings record found" })}</p>
+                <p className="text-gray-400 text-xs mt-1">{t("noBookingsDesc", { defaultValue: "Your slot reservation details will appear here once you place an order." })}</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -195,21 +196,29 @@ function PickupSlots() {
                           })}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          Timing: {formatTime12h(booking.startTime)} - {formatTime12h(booking.endTime)}
+                          {t("timing", { defaultValue: "Timing" })}: {formatTime12h(booking.startTime)} - {formatTime12h(booking.endTime)}
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">Order #{booking.orderId} • Total: ₹{parseFloat(booking.totalAmount).toFixed(2)}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">{t("orderNo", { defaultValue: "Order #" })}{booking.orderId} • {t("total", { defaultValue: "Total" })}: ₹{parseFloat(booking.totalAmount).toFixed(2)}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadge(booking.status)}`}>
-                        {booking.status}
+                        {booking.status === "PENDING"
+                          ? t("pending", { defaultValue: "PENDING" })
+                          : booking.status === "CONFIRMED"
+                          ? t("confirmed", { defaultValue: "CONFIRMED" })
+                          : booking.status === "COMPLETED"
+                          ? t("completed", { defaultValue: "COMPLETED" })
+                          : booking.status === "CANCELLED"
+                          ? t("cancelled", { defaultValue: "CANCELLED" })
+                          : booking.status}
                       </span>
                       <Link
                         to="/dashboard/orders"
                         className="text-xs font-bold text-green-600 hover:text-green-700 flex items-center gap-1"
                       >
-                        Details <FaArrowRight size={10} />
+                        {t("details", { defaultValue: "Details" })} <FaArrowRight size={10} />
                       </Link>
                     </div>
                   </div>

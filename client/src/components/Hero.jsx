@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { ShoppingBasket, Clock3, Truck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Hero() {
+  const { t } = useTranslation();
+
   return (
     <section className="bg-gradient-to-br from-green-50 via-white to-orange-50">
       <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24">
@@ -22,7 +25,7 @@ function Hero() {
               font-medium
               "
             >
-              🌿 Fresh & Queue-Free Grocery Shopping
+              {t("heroBadge")}
             </span>
 
             <h1
@@ -35,8 +38,8 @@ function Hero() {
               leading-tight
               "
             >
-              Fresh Groceries,
-              <span className="text-green-600"> Zero Waiting</span>
+              {t("heroTitle")}
+              <span className="text-green-600">{t("heroTitleWaiting")}</span>
             </h1>
 
             <p
@@ -48,8 +51,7 @@ function Hero() {
               max-w-xl
               "
             >
-              Shop groceries online, choose your pickup slot, and collect your
-              order without standing in long queues.
+              {t("heroSubtitle")}
             </p>
 
             {/* Buttons */}
@@ -67,11 +69,11 @@ function Hero() {
                 transition
                 "
               >
-                Shop Now
+                {t("shopNow")}
               </Link>
 
               <Link
-                to="/categories"
+                to="/products"
                 className="
                 border
                 border-green-600
@@ -84,7 +86,7 @@ function Hero() {
                 transition
                 "
               >
-                Explore Categories
+                {t("exploreCategories")}
               </Link>
             </div>
 
@@ -93,30 +95,30 @@ function Hero() {
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <ShoppingBasket className="text-green-600" size={30} />
 
-                <h3 className="font-semibold mt-3">Fresh Products</h3>
+                <h3 className="font-semibold mt-3">{t("freshProducts")}</h3>
 
                 <p className="text-sm text-gray-500 mt-2">
-                  Daily fresh groceries and essentials.
+                  {t("freshProductsDesc")}
                 </p>
               </div>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <Clock3 className="text-orange-500" size={30} />
 
-                <h3 className="font-semibold mt-3">Book Slot</h3>
+                <h3 className="font-semibold mt-3">{t("bookSlot")}</h3>
 
                 <p className="text-sm text-gray-500 mt-2">
-                  Choose your convenient pickup time.
+                  {t("bookSlotDesc")}
                 </p>
               </div>
 
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <Truck className="text-green-600" size={30} />
 
-                <h3 className="font-semibold mt-3">No Waiting</h3>
+                <h3 className="font-semibold mt-3">{t("noWaiting")}</h3>
 
                 <p className="text-sm text-gray-500 mt-2">
-                  Collect groceries without standing in queues.
+                  {t("noWaitingDesc")}
                 </p>
               </div>
             </div>
@@ -152,7 +154,7 @@ function Hero() {
                   GrocyGo
                 </h2>
 
-                <p className="text-gray-600 mt-2">Order • Book • Pickup</p>
+                <p className="text-gray-600 mt-2">{t("orderBookPickup")}</p>
               </div>
             </div>
           </div>

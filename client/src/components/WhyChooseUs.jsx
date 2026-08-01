@@ -1,28 +1,29 @@
 import { Clock3, ShieldCheck, Leaf, TimerOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function WhyChooseUs() {
+  const { t } = useTranslation();
+
   const features = [
     {
       icon: <TimerOff size={35} />,
-      title: "No Waiting Queue",
-      description: "Skip long billing lines and collect groceries instantly.",
+      title: t("noWaitingQueue"),
+      description: t("noWaitingQueueDesc"),
     },
     {
       icon: <Clock3 size={35} />,
-      title: "Flexible Pickup Slots",
-      description: "Choose a convenient time and pick up your order easily.",
+      title: t("flexiblePickupSlots"),
+      description: t("flexiblePickupSlotsDesc"),
     },
     {
       icon: <Leaf size={35} />,
-      title: "Fresh Daily Groceries",
-      description:
-        "Get fresh fruits, vegetables, dairy and essentials every day.",
+      title: t("freshDailyGroceries"),
+      description: t("freshDailyGroceriesDesc"),
     },
     {
       icon: <ShieldCheck size={35} />,
-      title: "Secure Ordering",
-      description:
-        "Your orders and account information remain safe and protected.",
+      title: t("secureOrdering"),
+      description: t("secureOrderingDesc"),
     },
   ];
 
@@ -32,11 +33,11 @@ function WhyChooseUs() {
         {/* Heading */}
         <div className="text-center">
           <h2 className="text-4xl font-bold text-gray-800">
-            Why Choose GrocyGo?
+            {t("whyChooseTitle")}
           </h2>
 
           <p className="text-gray-500 mt-4 text-lg">
-            Grocery shopping made smarter, faster and hassle-free.
+            {t("whyChooseSubtitle")}
           </p>
         </div>
 

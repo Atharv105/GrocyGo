@@ -15,6 +15,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const slotRoutes = require("./routes/slotRoutes");
 
 const errorMiddleware = require("./middleware/errorMiddleware");
+const localizationMiddleware = require("./middleware/localizationMiddleware");
 
 const app = express();
 
@@ -54,6 +55,9 @@ app.use(cookieParser());
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Localization Middleware
+app.use(localizationMiddleware);
 
 // Health Check Route (Useful for Deployment)
 app.get("/", (req, res) => {

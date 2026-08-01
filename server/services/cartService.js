@@ -72,7 +72,8 @@ const getMyCart = async (userId) => {
                         model: Product,
                         attributes: [
                             "id",
-                            "name",
+                            "name_en",
+                            "name_mr",
                             "price",
                             "stock",
                             "unit",
@@ -107,7 +108,9 @@ const getMyCart = async (userId) => {
             return {
                 id: item.id,
                 productId: item.Product.id,
-                name: item.Product.name,
+                name_en: item.Product.name_en,
+                name_mr: item.Product.name_mr,
+                name: item.Product.name_en, // default
                 image: item.Product.image,
                 unit: item.Product.unit,
                 price: item.Product.price,

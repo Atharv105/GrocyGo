@@ -1,15 +1,18 @@
 import { Clock3, Phone, MapPin, ShoppingBasket } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function StoreInfo() {
+  const { t } = useTranslation();
+
   return (
     <section className="bg-green-50 py-20">
       <div className="max-w-7xl mx-auto px-6">
         {/* Heading */}
         <div className="text-center">
-          <h2 className="text-4xl font-bold text-gray-800">Visit Our Store</h2>
+          <h2 className="text-4xl font-bold text-gray-800">{t("visitOurStore")}</h2>
 
           <p className="text-gray-500 mt-4 text-lg">
-            Order online and collect groceries at your selected pickup time.
+            {t("orderOnlineCollectDesc")}
           </p>
         </div>
 
@@ -20,9 +23,9 @@ function StoreInfo() {
               <Clock3 className="text-green-700" size={30} />
             </div>
 
-            <h3 className="font-bold text-xl mt-6">Store Timing</h3>
+            <h3 className="font-bold text-xl mt-6">{t("storeTiming")}</h3>
 
-            <p className="text-gray-500 mt-3">8:00 AM - 9:00 PM</p>
+            <p className="text-gray-500 mt-3">{t("storeTimingVal")}</p>
           </div>
 
           <div className="bg-white rounded-3xl p-8 shadow-sm text-center">
@@ -30,9 +33,9 @@ function StoreInfo() {
               <ShoppingBasket className="text-green-700" size={30} />
             </div>
 
-            <h3 className="font-bold text-xl mt-6">Pickup Timing</h3>
+            <h3 className="font-bold text-xl mt-6">{t("pickupTiming")}</h3>
 
-            <p className="text-gray-500 mt-3">9:00 AM - 8:00 PM</p>
+            <p className="text-gray-500 mt-3">{t("pickupTimingVal")}</p>
           </div>
 
           <div className="bg-white rounded-3xl p-8 shadow-sm text-center">
@@ -40,7 +43,7 @@ function StoreInfo() {
               <Phone className="text-green-700" size={30} />
             </div>
 
-            <h3 className="font-bold text-xl mt-6">Contact</h3>
+            <h3 className="font-bold text-xl mt-6">{t("contact")}</h3>
 
             <p className="text-gray-500 mt-3">+91 98765 43210</p>
           </div>
@@ -50,9 +53,9 @@ function StoreInfo() {
               <MapPin className="text-green-700" size={30} />
             </div>
 
-            <h3 className="font-bold text-xl mt-6">Location</h3>
+            <h3 className="font-bold text-xl mt-6">{t("location")}</h3>
 
-            <p className="text-gray-500 mt-3">Kolhapur, Maharashtra</p>
+            <p className="text-gray-500 mt-3">{t("locationVal")}</p>
           </div>
         </div>
 
@@ -69,11 +72,10 @@ function StoreInfo() {
           text-white
           "
         >
-          <h2 className="text-4xl font-bold">Ready to Skip the Queue?</h2>
+          <h2 className="text-4xl font-bold">{t("readyToSkip")}</h2>
 
           <p className="mt-5 text-green-100 text-lg">
-            Shop groceries online, book your pickup slot, and collect your order
-            without waiting.
+            {t("shopCollectNoWaiting")}
           </p>
 
           <button
@@ -89,7 +91,7 @@ function StoreInfo() {
             transition
             "
           >
-            Start Shopping
+            {t("startShopping")}
           </button>
         </div>
       </div>

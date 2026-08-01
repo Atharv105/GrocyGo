@@ -1,10 +1,12 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { AuthContext } from "./AuthContext";
 import * as cartService from "../services/cartService";
+import { useTranslation } from "react-i18next";
 
 export const CartContext = createContext();
 
 export function CartProvider({ children }) {
+  const { i18n } = useTranslation();
   const { isLoggedIn } = useContext(AuthContext);
   const [cartItems, setCartItems] = useState([]);
   const [cartLoading, setCartLoading] = useState(false);
@@ -32,7 +34,7 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     fetchCart();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, i18n.language]);
 
   const addToCart = async (productId, quantity = 1) => {
     const res = await cartService.addToCart(productId, quantity);

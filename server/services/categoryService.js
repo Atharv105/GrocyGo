@@ -3,9 +3,15 @@ const AppError = require("../utils/AppError");
 
 // Create Category
 const createCategory = async (categoryData) => {
+  const { name_en, name_mr } = categoryData;
+  const { Op } = require("sequelize");
+
   const existingCategory = await Category.findOne({
     where: {
-      name: categoryData.name,
+      [Op.or]: [
+        { name_en: name_en },
+        { name_mr: name_mr }
+      ],
       isActive: true,
     },
   });
@@ -52,16 +58,21 @@ const updateCategory = async (id, categoryData) => {
     throw new AppError("Category not found", 404);
   }
 
-  if (categoryData.name) {
+  if (categoryData.name_en || categoryData.name_mr) {
+    const { Op } = require("sequelize");
+    const orConditions = [];
+    if (categoryData.name_en) orConditions.push({ name_en: categoryData.name_en });
+    if (categoryData.name_mr) orConditions.push({ name_mr: categoryData.name_mr });
+
     const existingCategory = await Category.findOne({
       where: {
-        name: categoryData.name,
+        [Op.or]: orConditions,
         isActive: true,
       },
     });
 
     if (existingCategory && existingCategory.id !== category.id) {
-      throw new AppError("Category name already exists", 400);
+      throw new AppError("Category name (English or Marathi) already exists", 400);
     }
   }
 

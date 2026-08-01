@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import CategoryCard from "./CategoryCard";
 import API from "../services/api";
 
 function Categories() {
+  const { t, i18n } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +23,7 @@ function Categories() {
       }
     };
     fetchCategories();
-  }, []);
+  }, [i18n.language]);
 
   return (
     <section className="bg-white py-20">
@@ -34,7 +36,7 @@ function Categories() {
             text-gray-800
             "
           >
-            Shop by Categories
+            {t("shopByCategories")}
           </h2>
 
           <p
@@ -44,12 +46,12 @@ function Categories() {
             text-lg
             "
           >
-            Find your daily essentials quickly.
+            {t("findEssentials")}
           </p>
         </div>
 
         {loading ? (
-          <div className="text-center mt-14 text-gray-500 text-lg">Loading categories...</div>
+          <div className="text-center mt-14 text-gray-500 text-lg">{t("loadingCategories")}</div>
         ) : (
           <div
             className="

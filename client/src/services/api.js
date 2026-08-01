@@ -16,6 +16,10 @@ API.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    const lang = localStorage.getItem("lang") || "en";
+    config.params = { lang, ...config.params };
+
     return config;
   },
   (error) => {

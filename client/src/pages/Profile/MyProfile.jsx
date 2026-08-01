@@ -7,9 +7,11 @@ import {
 } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import API from "../../services/api";
 
 function MyProfile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -33,7 +35,7 @@ function MyProfile() {
     fetchProfile();
   }, [navigate]);
   if (!user) {
-    return <h2 className="text-center mt-20">Loading...</h2>;
+    return <h2 className="text-center mt-20">{t("loading")}</h2>;
   }
 
   return (
@@ -53,7 +55,7 @@ function MyProfile() {
 
               <h1 className="text-3xl font-bold mt-4">{user.name}</h1>
 
-              <p className="text-gray-500">GrocyGo {user.role}</p>
+              <p className="text-gray-500">GrocyGo {user.role === "ADMIN" ? t("adminPanel", { defaultValue: "ADMIN" }) : t("customer")}</p>
             </div>
 
             {/* Information */}
@@ -63,9 +65,9 @@ function MyProfile() {
                 <FaUserCircle className="text-green-700 text-xl" />
 
                 <div>
-                  <p className="text-gray-500 text-sm">Full Name</p>
+                  <p className="text-gray-500 text-sm">{t("profile", { defaultValue: "Full Name" })}</p>
 
-                  <h3 className="font-semibold">{user.name || "Not Provided"}</h3>
+                  <h3 className="font-semibold">{user.name || t("notProvided", { defaultValue: "Not Provided" })}</h3>
                 </div>
               </div>
 
@@ -73,7 +75,7 @@ function MyProfile() {
                 <FaPhoneAlt className="text-green-700 text-xl" />
 
                 <div>
-                  <p className="text-gray-500 text-sm">Mobile Number</p>
+                  <p className="text-gray-500 text-sm">{t("mobileNumber")}</p>
 
                   <h3 className="font-semibold">{user.mobile}</h3>
                 </div>
@@ -83,9 +85,9 @@ function MyProfile() {
                 <FaMapMarkerAlt className="text-green-700 text-xl" />
 
                 <div>
-                  <p className="text-gray-500 text-sm">Address</p>
+                  <p className="text-gray-500 text-sm">{t("addresses", { defaultValue: "Address" })}</p>
 
-                  <h3 className="font-semibold">{user.address || "Not Provided"}</h3>
+                  <h3 className="font-semibold">{user.address || t("notProvided", { defaultValue: "Not Provided" })}</h3>
                 </div>
               </div>
 
@@ -93,7 +95,7 @@ function MyProfile() {
                 <FaCalendarAlt className="text-green-700 text-xl" />
 
                 <div>
-                  <p className="text-gray-500 text-sm">Member Since</p>
+                  <p className="text-gray-500 text-sm">{t("memberSince", { defaultValue: "Member Since" })}</p>
 
                   <h3 className="font-semibold">
                     {user.createdAt
@@ -102,7 +104,7 @@ function MyProfile() {
                         month: "long",
                         day: "numeric",
                       })
-                      : "N/A"}
+                      : "—"}
                   </h3>
                 </div>
               </div>
@@ -125,7 +127,7 @@ function MyProfile() {
                 "
               >
                 <FaEdit />
-                Edit Profile
+                {t("editProfile", { defaultValue: "Edit Profile" })}
               </button>
             </div>
           </div>

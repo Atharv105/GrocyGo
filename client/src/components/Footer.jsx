@@ -1,9 +1,11 @@
 import { ShoppingBasket, Phone, MapPin } from "lucide-react";
-
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -28,45 +30,44 @@ function Footer() {
               <div>
                 <h2 className="text-3xl font-bold text-white">GrocyGo</h2>
 
-                <p className="text-sm text-gray-400">Fresh & Queue Free</p>
+                <p className="text-sm text-gray-400">{t("freshQueueFree")}</p>
               </div>
             </div>
 
             <p className="mt-6 leading-8 text-gray-400">
-              Shop groceries online, book your pickup slot, and collect your
-              order without standing in queues.
+              {t("heroSubtitle")}
             </p>
           </div>
 
           {/* Company */}
           <div>
-            <h3 className="text-white text-xl font-semibold">Company</h3>
+            <h3 className="text-white text-xl font-semibold">{t("company")}</h3>
 
             <div className="mt-6 flex flex-col gap-4">
-              <Link className="hover:text-green-400">About Us</Link>
+              <Link className="hover:text-green-400">{t("aboutUs")}</Link>
 
-              <Link className="hover:text-green-400">Contact Us</Link>
+              <Link className="hover:text-green-400">{t("contactUs")}</Link>
 
-              <Link className="hover:text-green-400">Careers</Link>
+              <Link className="hover:text-green-400">{t("careers")}</Link>
             </div>
           </div>
 
           {/* Customer */}
           <div>
-            <h3 className="text-white text-xl font-semibold">Customer</h3>
+            <h3 className="text-white text-xl font-semibold">{t("profile")}</h3>
 
             <div className="mt-6 flex flex-col gap-4">
-              <Link className="hover:text-green-400">My Orders</Link>
+              <Link to="/dashboard/orders" className="hover:text-green-400">{t("myOrders")}</Link>
 
-              <Link className="hover:text-green-400">Wishlist</Link>
+              <Link to="/dashboard/wishlist" className="hover:text-green-400">{t("wishlist")}</Link>
 
-              <Link className="hover:text-green-400">Help Center</Link>
+              <Link className="hover:text-green-400">{t("helpCenter")}</Link>
             </div>
           </div>
 
           {/* Contact */}
           <div>
-            <h3 className="text-white text-xl font-semibold">Contact</h3>
+            <h3 className="text-white text-xl font-semibold">{t("contact")}</h3>
 
             <div className="mt-6 space-y-5">
               <div className="flex gap-3">
@@ -78,7 +79,7 @@ function Footer() {
               <div className="flex gap-3">
                 <MapPin className="text-green-500" size={20} />
 
-                <p>Kolhapur, Maharashtra</p>
+                <p>{t("locationVal")}</p>
               </div>
             </div>
 
@@ -145,7 +146,7 @@ function Footer() {
           text-center
           "
         >
-          <p className="text-gray-500">© 2026 GrocyGo. All Rights Reserved.</p>
+          <p className="text-gray-500">{t("allRightsReserved")}</p>
         </div>
       </div>
     </footer>

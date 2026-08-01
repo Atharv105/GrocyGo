@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   FaClipboardList,
   FaHeart,
@@ -11,52 +12,53 @@ import {
 } from "react-icons/fa";
 
 function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
 
   const quickLinks = [
     {
-      title: "My Orders",
-      description: "Track and view your past orders",
+      title: t("myOrders"),
+      description: t("quickOrdersDesc", { defaultValue: "Track and view your past orders" }),
       icon: <FaClipboardList size={28} />,
       path: "/dashboard/orders",
       color: "bg-blue-500",
       light: "bg-blue-50 text-blue-700",
     },
     {
-      title: "Wishlist",
-      description: "Items you've saved for later",
+      title: t("wishlist"),
+      description: t("quickWishlistDesc", { defaultValue: "Items you've saved for later" }),
       icon: <FaHeart size={28} />,
       path: "/dashboard/wishlist",
       color: "bg-pink-500",
       light: "bg-pink-50 text-pink-700",
     },
     {
-      title: "Pickup Slots",
-      description: "Book or view your pickup slots",
+      title: t("pickupSlots"),
+      description: t("quickSlotsDesc", { defaultValue: "Book or view your pickup slots" }),
       icon: <FaClock size={28} />,
       path: "/dashboard/slots",
       color: "bg-orange-500",
       light: "bg-orange-50 text-orange-700",
     },
     {
-      title: "Addresses",
-      description: "Manage your saved addresses",
+      title: t("addresses"),
+      description: t("quickAddressesDesc", { defaultValue: "Manage your saved addresses" }),
       icon: <FaMapMarkerAlt size={28} />,
       path: "/dashboard/address",
       color: "bg-purple-500",
       light: "bg-purple-50 text-purple-700",
     },
     {
-      title: "Settings",
-      description: "Update your account preferences",
+      title: t("settings"),
+      description: t("quickSettingsDesc", { defaultValue: "Update your account preferences" }),
       icon: <FaCog size={28} />,
       path: "/dashboard/settings",
       color: "bg-gray-600",
       light: "bg-gray-100 text-gray-700",
     },
     {
-      title: "My Profile",
-      description: "View and edit your profile",
+      title: t("myProfile"),
+      description: t("quickProfileDesc", { defaultValue: "View and edit your profile" }),
       icon: <FaUserCircle size={28} />,
       path: "/profile",
       color: "bg-green-600",
@@ -69,20 +71,20 @@ function Dashboard() {
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 text-white shadow-lg">
         <h1 className="text-3xl font-bold">
-          Welcome back, {user?.name?.split(" ")[0]} 👋
+          {t("welcomeBackCustomer")} {user?.name?.split(" ")[0]} 👋
         </h1>
         <p className="text-green-100 mt-2">
-          Manage your orders, wishlist, and pickup slots all from one place.
+          {t("dashboardBannerDesc", { defaultValue: "Manage your orders, wishlist, and pickup slots all from one place." })}
         </p>
         <div className="flex items-center gap-2 mt-4 bg-green-600/50 w-fit px-4 py-2 rounded-full">
           <span className="w-2 h-2 bg-green-300 rounded-full animate-pulse" />
-          <span className="text-sm text-green-100">Mobile: {user?.mobile}</span>
+          <span className="text-sm text-green-100">{t("mobileNumber")}: {user?.mobile}</span>
         </div>
       </div>
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">{t("quickActions", { defaultValue: "Quick Actions" })}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {quickLinks.map((item) => (
             <Link
@@ -106,22 +108,22 @@ function Dashboard() {
 
       {/* Account Info Card */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Account Summary</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4">{t("accountSummary", { defaultValue: "Account Summary" })}</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="bg-green-50 rounded-xl p-4">
-            <p className="text-sm text-gray-500">Name</p>
+            <p className="text-sm text-gray-500">{t("profile", { defaultValue: "Name" })}</p>
             <p className="font-semibold text-gray-800 mt-1">{user?.name}</p>
           </div>
           <div className="bg-green-50 rounded-xl p-4">
-            <p className="text-sm text-gray-500">Mobile</p>
+            <p className="text-sm text-gray-500">{t("mobileNumber")}</p>
             <p className="font-semibold text-gray-800 mt-1">{user?.mobile}</p>
           </div>
           <div className="bg-green-50 rounded-xl p-4">
-            <p className="text-sm text-gray-500">Account Type</p>
-            <p className="font-semibold text-gray-800 mt-1">Customer</p>
+            <p className="text-sm text-gray-500">{t("accountType", { defaultValue: "Account Type" })}</p>
+            <p className="font-semibold text-gray-800 mt-1">{t("customer", { defaultValue: "Customer" })}</p>
           </div>
           <div className="bg-green-50 rounded-xl p-4">
-            <p className="text-sm text-gray-500">Member Since</p>
+            <p className="text-sm text-gray-500">{t("memberSince", { defaultValue: "Member Since" })}</p>
             <p className="font-semibold text-gray-800 mt-1">
               {user?.createdAt
                 ? new Date(user.createdAt).toLocaleDateString("en-IN", {
