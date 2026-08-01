@@ -40,11 +40,16 @@ function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [selectedDate, setSelectedDate] = useState("");
 =======
   const [paymentFilter, setPaymentFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("ALL");
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [dateFilter, setDateFilter] = useState("ALL");
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
 
   // Detail Modal State
   const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -462,6 +467,7 @@ function AdminOrders() {
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <<<<<<< HEAD
+<<<<<<< HEAD
           {/* Search bar & Date Filter */}
           <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-4 max-w-2xl">
             <div className="relative flex-1 max-w-md">
@@ -496,6 +502,8 @@ function AdminOrders() {
               )}
             </div>
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
           {/* Search bar */}
           <div className="relative flex-1 max-w-md">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -593,7 +601,10 @@ function AdminOrders() {
                   })}
               </div>
             )}
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
           </div>
 
           {/* Filter Tabs */}

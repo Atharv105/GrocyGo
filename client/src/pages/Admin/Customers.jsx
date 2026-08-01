@@ -8,11 +8,16 @@ function AdminCustomers() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [selectedDate, setSelectedDate] = useState("");
 =======
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
 
   useEffect(() => {
     const fetchCustomersFromOrders = async () => {
@@ -99,6 +104,7 @@ function AdminCustomers() {
 
       {/* Search and Summary */}
 <<<<<<< HEAD
+<<<<<<< HEAD
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto flex-1">
           <div className="relative flex-1 max-w-xs">
@@ -133,6 +139,8 @@ function AdminCustomers() {
             )}
           </div>
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
         <div className="relative w-full sm:max-w-xs">
           <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
@@ -199,7 +207,10 @@ function AdminCustomers() {
                 })}
             </div>
           )}
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
         </div>
 
         <div className="text-sm font-semibold text-gray-500 self-end md:self-center shrink-0">

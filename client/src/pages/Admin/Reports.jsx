@@ -10,8 +10,11 @@ function AdminReports() {
   });
   const [allOrders, setAllOrders] = useState([]);
 <<<<<<< HEAD
+<<<<<<< HEAD
   const [selectedDate, setSelectedDate] = useState("");
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
   const [period, setPeriod] = useState("7_DAYS"); // "7_DAYS", "30_DAYS", "ALL_TIME"
   
   const [orderStats, setOrderStats] = useState({
@@ -26,7 +29,10 @@ function AdminReports() {
     CANCELLED: 0,
   });
   const [dailySales, setDailySales] = useState([]);
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
   const [loading, setLoading] = useState(true);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
@@ -50,6 +56,7 @@ function AdminReports() {
         });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Set all orders
         const orders = orderRes.data.data?.orders || orderRes.data.data || [];
         setAllOrders(orders);
@@ -57,6 +64,10 @@ function AdminReports() {
         // Store all orders in state
         setAllOrders(orderRes.data.data?.orders || []);
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+        // Store all orders in state
+        setAllOrders(orderRes.data.data?.orders || []);
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
       } catch (err) {
         console.error("Error loading report analytics:", err);
       } finally {
@@ -67,6 +78,7 @@ function AdminReports() {
     fetchReportData();
   }, []);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   const reportData = useMemo(() => {
     // 1. Filter orders by selected slot date
@@ -82,6 +94,8 @@ function AdminReports() {
 
     // 3. Status distribution
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
   // Compute stats and daily sales dynamically based on selected period
   useEffect(() => {
     if (!allOrders.length) return;
@@ -112,13 +126,17 @@ function AdminReports() {
     });
 
     // Calculate status distribution
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
     const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
     filteredOrders.forEach((o) => {
       if (dist[o.status] !== undefined) {
         dist[o.status]++;
       }
     });
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     // 4. Calculate last 7 days sales map leading to selected date (or today)
@@ -131,6 +149,8 @@ function AdminReports() {
       dailyMap[dateStr] = {
         dateLabel: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
     setStatusDistribution(dist);
 
     // Calculate sales map for the period (either 7 days or 30 days)
@@ -146,11 +166,15 @@ function AdminReports() {
           ? d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" })
           : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
         shortLabel: d.toLocaleDateString("en-IN", { day: "numeric" }),
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
         revenue: 0,
       };
     }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     // Fill sales data using slot dates (if present) or order creation dates, but only for paid orders
     allOrders.forEach((o) => {
@@ -160,11 +184,17 @@ function AdminReports() {
     allOrders.forEach((o) => {
       const dateStr = o.createdAt.split("T")[0];
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+    // Fill sales data (from all orders matching the chart date range)
+    allOrders.forEach((o) => {
+      const dateStr = o.createdAt.split("T")[0];
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
       if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
         dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
       }
     });
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     return {
       totalRevenue,
@@ -180,6 +210,8 @@ function AdminReports() {
     { label: "Average Order Value (AOV)", value: `₹${reportData.aov.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaCalculator />, color: "bg-blue-500", text: "Revenue per paid basket" },
     { label: "Total Orders", value: reportData.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: "Placed order logs" },
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
     setDailySales(Object.values(dailyMap));
   }, [allOrders, period]);
 
@@ -187,7 +219,10 @@ function AdminReports() {
     { label: "Total Revenue", value: `₹${orderStats.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaDollarSign />, color: "bg-emerald-500", text: `Paid earnings (${period === "7_DAYS" ? "last 7d" : period === "30_DAYS" ? "last 30d" : "all-time"})` },
     { label: "Average Order Value (AOV)", value: `₹${orderStats.aov.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, icon: <FaCalculator />, color: "bg-blue-500", text: "Revenue per paid basket" },
     { label: "Total Orders", value: orderStats.orderCount.toString(), icon: <FaShoppingBag />, color: "bg-purple-500", text: `Placed logs (${period === "7_DAYS" ? "7d" : period === "30_DAYS" ? "30d" : "all"})` },
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
     { label: "Total Products", value: stats.totalProducts.toString(), icon: <FaBoxes />, color: "bg-green-500", text: "Active catalog items" },
     { label: "Total Categories", value: stats.totalCategories.toString(), icon: <FaTags />, color: "bg-orange-500", text: "Product groups" },
     { label: "Low Stock Alerts", value: stats.lowStock.toString(), icon: <FaBoxes />, color: "bg-red-500", text: "5 units or less" },
@@ -207,15 +242,21 @@ function AdminReports() {
   return (
     <div className="space-y-8">
 <<<<<<< HEAD
+<<<<<<< HEAD
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 =======
       {/* Header with period selection filter */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+      {/* Header with period selection filter */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Reports & Analytics</h1>
           <p className="text-gray-500 mt-2 text-base">Visualize financial metrics and category catalogs.</p>
         </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
         {/* Date Filter */}
@@ -238,6 +279,8 @@ function AdminReports() {
             </button>
           )}
 =======
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
         <div className="flex bg-gray-100 p-1.5 rounded-2xl self-start md:self-auto border border-gray-200/50 shadow-sm">
           {[
             { id: "7_DAYS", label: "7 Days" },
@@ -256,7 +299,10 @@ function AdminReports() {
               {opt.label}
             </button>
           ))}
+<<<<<<< HEAD
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
         </div>
       </div>
 
@@ -284,10 +330,14 @@ function AdminReports() {
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
 <<<<<<< HEAD
+<<<<<<< HEAD
               <FaChartBar className="text-green-600" /> {selectedDate ? `Daily Revenue (7 Days Ending ${new Date(selectedDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })})` : "Daily Revenue (Last 7 Days)"}
 =======
               <FaChartBar className="text-green-600" /> Daily Revenue ({period === "7_DAYS" ? "Last 7 Days" : "Last 30 Days"})
 >>>>>>> 28f64fea3cfd57f351d0430c5f0c92e948de541a
+=======
+              <FaChartBar className="text-green-600" /> Daily Revenue ({period === "7_DAYS" ? "Last 7 Days" : "Last 30 Days"})
+>>>>>>> e845463edf59121647ef46c17712f0441a10b9a4
             </h2>
             <p className="text-xs text-gray-400 mb-6">Excludes pending or cancelled orders.</p>
           </div>
