@@ -45,49 +45,29 @@ function AdminReports() {
   }, []);
 
   const reportData = useMemo(() => {
-    let filteredOrders = allOrders;
-
-    // Filter by period (createdAt)
-    const now = new Date();
-    if (period === "7_DAYS") {
-      const minDate = new Date();
-      minDate.setDate(now.getDate() - 6);
-      minDate.setHours(0, 0, 0, 0);
-      filteredOrders = filteredOrders.filter((o) => new Date(o.createdAt) >= minDate);
-    } else if (period === "30_DAYS") {
-      const minDate = new Date();
-      minDate.setDate(now.getDate() - 29);
-      minDate.setHours(0, 0, 0, 0);
-      filteredOrders = filteredOrders.filter((o) => new Date(o.createdAt) >= minDate);
-    }
-
-    // Filter by slot date if selected
+    // 1. Parse chart end date (local timezone safe)
+    let chartEndDate;
     if (selectedDate) {
-      filteredOrders = filteredOrders.filter((o) => o.Slot && o.Slot.date === selectedDate);
+      const [year, month, day] = selectedDate.split("-").map(Number);
+      chartEndDate = new Date(year, month - 1, day);
+    } else {
+      chartEndDate = new Date();
     }
+    chartEndDate.setHours(23, 59, 59, 999);
 
-    // Process orders stats
-    const paidOrders = filteredOrders.filter((o) => o.paymentStatus === "PAID");
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
-    const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
-    const orderCount = filteredOrders.length;
-
-    // Status distribution
-    const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
-    filteredOrders.forEach((o) => {
-      if (dist[o.status] !== undefined) {
-        dist[o.status]++;
-      }
-    });
-
-    // Calculate sales map for the period
+    // 2. Define the days to draw for the chart (7 or 30 days)
     const daysToDraw = period === "7_DAYS" ? 7 : 30;
-    const chartEndDate = selectedDate ? new Date(selectedDate) : new Date();
+
+    // 3. Initialize daily sales map for the chart period (local timezone safe)
     const dailyMap = {};
     for (let i = daysToDraw - 1; i >= 0; i--) {
       const d = new Date(chartEndDate);
       d.setDate(chartEndDate.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${year}-${month}-${day}`;
+      
       dailyMap[dateStr] = {
         dateLabel: daysToDraw <= 7
           ? d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" })
@@ -97,10 +77,56 @@ function AdminReports() {
       };
     }
 
-    filteredOrders.forEach((o) => {
-      const dateStr = o.Slot ? o.Slot.date : (o.createdAt ? o.createdAt.split("T")[0] : "");
+    // 4. Filter orders for stats (summary cards & status distribution)
+    let statsOrders = allOrders;
+    if (selectedDate) {
+      // If a slot date is selected, the stats reflect that specific slot date
+      statsOrders = statsOrders.filter((o) => o.Slot && o.Slot.date === selectedDate);
+    } else {
+      // Otherwise, filter by period (createdAt)
+      const now = new Date();
+      if (period === "7_DAYS") {
+        const minDate = new Date();
+        minDate.setDate(now.getDate() - 6);
+        minDate.setHours(0, 0, 0, 0);
+        statsOrders = statsOrders.filter((o) => new Date(o.createdAt) >= minDate);
+      } else if (period === "30_DAYS") {
+        const minDate = new Date();
+        minDate.setDate(now.getDate() - 29);
+        minDate.setHours(0, 0, 0, 0);
+        statsOrders = statsOrders.filter((o) => new Date(o.createdAt) >= minDate);
+      }
+    }
+
+    // 5. Populate the daily sales chart using ALL orders that fall within the chart's date range
+    allOrders.forEach((o) => {
+      let dateStr = "";
+      if (o.Slot) {
+        dateStr = o.Slot.date;
+      } else if (o.createdAt) {
+        const createdDate = new Date(o.createdAt);
+        const year = createdDate.getFullYear();
+        const month = String(createdDate.getMonth() + 1).padStart(2, "0");
+        const day = String(createdDate.getDate()).padStart(2, "0");
+        dateStr = `${year}-${month}-${day}`;
+      }
+
       if (dailyMap[dateStr] && o.paymentStatus === "PAID") {
         dailyMap[dateStr].revenue += parseFloat(o.totalAmount || 0);
+      }
+    });
+
+    // 6. Calculate stats metrics from statsOrders
+    const paidOrders = statsOrders.filter((o) => o.paymentStatus === "PAID");
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
+    const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
+    const orderCount = statsOrders.length;
+
+    // Status distribution from statsOrders
+    const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
+    statsOrders.forEach((o) => {
+      if (dist[o.status] !== undefined) {
+        dist[o.status]++;
       }
     });
 
