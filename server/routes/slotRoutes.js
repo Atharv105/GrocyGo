@@ -5,7 +5,7 @@ const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 
-const { createSlot , getAllSlots, generateSlots, getAvailableSlots, updateSlot} = require("../controllers/slotController");
+const { createSlot , getAllSlots, generateSlots, getAvailableSlots, updateSlot, deleteSlot, bulkUpdateSlotStatus, bulkDeleteSlots} = require("../controllers/slotController");
 
 const { createSlotValidation, generateSlotsValidation } = require("../validations/slotValidation");
 const validationMiddleware = require("../middleware/validationMiddleware");
@@ -42,12 +42,33 @@ router.get(
 );
 
 router.put(
+  "/bulk/status",
+  authMiddleware,
+  adminMiddleware,
+  bulkUpdateSlotStatus
+);
+
+router.delete(
+  "/bulk",
+  authMiddleware,
+  adminMiddleware,
+  bulkDeleteSlots
+);
+
+router.put(
   "/:id",
   authMiddleware,
   adminMiddleware,
   createSlotValidation, // Reuse slot payload schema
   validationMiddleware,
   updateSlot
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminMiddleware,
+  deleteSlot
 );
 
 module.exports = router;

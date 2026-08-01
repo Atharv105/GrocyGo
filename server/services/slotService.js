@@ -241,10 +241,79 @@ const updateSlot = async (id, slotData) => {
   return slot;
 };
 
+const deleteSlot = async (id) => {
+  const slot = await Slot.findByPk(id);
+  if (!slot) {
+    throw new AppError("Slot not found", 404);
+  }
+
+  if (slot.bookedCount > 0) {
+    throw new AppError("Cannot delete slot because it already has active customer bookings.", 400);
+  }
+
+  try {
+    await slot.destroy();
+  } catch (error) {
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      throw new AppError("Cannot delete slot because it is referenced by existing orders.", 400);
+    }
+    throw error;
+  }
+};
+
+const bulkUpdateSlotStatus = async (date, isActive) => {
+  if (!date) {
+    throw new AppError("Date is required", 400);
+  }
+
+  const [affectedCount] = await Slot.update(
+    { isActive },
+    {
+      where: {
+        date,
+      },
+    }
+  );
+
+  return { affectedCount };
+};
+
+const bulkDeleteSlots = async (date) => {
+  if (!date) {
+    throw new AppError("Date is required", 400);
+  }
+
+  // Find if there are any slots with bookings
+  const bookedSlotsCount = await Slot.count({
+    where: {
+      date,
+      bookedCount: {
+        [Op.gt]: 0,
+      },
+    },
+  });
+
+  // Delete all slots on this date with 0 bookings
+  const deletedCount = await Slot.destroy({
+    where: {
+      date,
+      bookedCount: 0,
+    },
+  });
+
+  return {
+    deletedCount,
+    keptCount: bookedSlotsCount,
+  };
+};
+
 module.exports = {
     createSlot,
     getAllSlots,
     generateSlots,
     getAvailableSlots,
     updateSlot,
+    deleteSlot,
+    bulkUpdateSlotStatus,
+    bulkDeleteSlots,
 };

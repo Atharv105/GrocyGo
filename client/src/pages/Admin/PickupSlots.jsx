@@ -9,7 +9,8 @@ import {
   FaShoppingBag, 
   FaUser, 
   FaPhone, 
-  FaSync 
+  FaSync,
+  FaTrash
 } from "react-icons/fa";
 import * as slotService from "../../services/slotService";
 import * as orderService from "../../services/orderService";
@@ -65,6 +66,82 @@ function AdminPickupSlots() {
 
   const handleRefresh = async () => {
     await Promise.all([fetchSlots(), fetchOrders()]);
+  };
+
+  const handleDeleteSlot = async (slotId) => {
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    if (!window.confirm("Are you sure you want to permanently delete this slot?")) {
+      return;
+    }
+
+    try {
+      const res = await slotService.deleteSlot(slotId);
+      if (res.success) {
+        setSuccessMsg("Slot deleted successfully!");
+        fetchSlots();
+      } else {
+        setErrorMsg(res.message || "Failed to delete slot.");
+      }
+    } catch (err) {
+      console.error("Failed to delete slot:", err);
+      setErrorMsg(
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while deleting the slot."
+      );
+    }
+  };
+
+  const handleBulkDelete = async (date) => {
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    if (!window.confirm(`Are you sure you want to permanently delete ALL slots for ${date}? Booked slots will be kept.`)) {
+      return;
+    }
+
+    try {
+      const res = await slotService.bulkDeleteSlots(date);
+      if (res.success) {
+        setSuccessMsg(res.message);
+        fetchSlots();
+      } else {
+        setErrorMsg(res.message || "Failed to delete slots.");
+      }
+    } catch (err) {
+      console.error("Failed to delete slots:", err);
+      setErrorMsg(
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while deleting slots."
+      );
+    }
+  };
+
+  const handleBulkStatusToggle = async (date, isActive) => {
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    const actionText = isActive ? "activate" : "deactivate";
+    if (!window.confirm(`Are you sure you want to ${actionText} ALL slots for ${date}?`)) {
+      return;
+    }
+
+    try {
+      const res = await slotService.bulkUpdateSlotStatus(date, isActive);
+      if (res.success) {
+        setSuccessMsg(res.message);
+        fetchSlots();
+      } else {
+        setErrorMsg(res.message || "Failed to update slots status.");
+      }
+    } catch (err) {
+      console.error("Failed to update slots status:", err);
+      setErrorMsg(
+        err.response?.data?.message ||
+        err.message ||
+        "An error occurred while updating slots status."
+      );
+    }
   };
 
   useEffect(() => {
@@ -350,10 +427,30 @@ function AdminPickupSlots() {
                 <button
                   type="button"
                   onClick={handleRefresh}
-                  className="text-xs bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5"
+                  className="text-xs bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 animate-scaleUp"
                   title="Refresh Slots & Orders"
                 >
                   <FaSync /> Refresh
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleBulkStatusToggle(selectedDate, false)}
+                  disabled={sortedSlots.length === 0}
+                  className="text-xs bg-amber-50 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed text-amber-700 border border-amber-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5"
+                  title="Deactivate All Slots for this Date"
+                >
+                  Deactivate All (Day)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleBulkDelete(selectedDate)}
+                  disabled={sortedSlots.length === 0}
+                  className="text-xs bg-red-50 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-700 border border-red-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5"
+                  title="Delete All Slots for this Date"
+                >
+                  <FaTrash /> Delete All (Day)
                 </button>
               </div>
             </div>
@@ -384,6 +481,7 @@ function AdminPickupSlots() {
                         <th className="pb-3 pl-2">Timing</th>
                         <th className="pb-3">Bookings</th>
                         <th className="pb-3">Status</th>
+                        <th className="pb-3 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -435,6 +533,15 @@ function AdminPickupSlots() {
                                 <option value="true">Active</option>
                                 <option value="false">Inactive</option>
                               </select>
+                            </td>
+                            <td className="py-3 text-center">
+                              <button
+                                onClick={() => handleDeleteSlot(slot.id)}
+                                className="text-red-600 hover:text-red-800 text-sm p-1.5 transition hover:bg-red-50 rounded-xl"
+                                title="Delete Slot"
+                              >
+                                <FaTrash />
+                              </button>
                             </td>
                           </tr>
                         );
