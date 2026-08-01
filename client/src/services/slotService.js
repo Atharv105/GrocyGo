@@ -25,3 +25,15 @@ export const getAvailableSlots = (date) =>
 /** Admin: Update slot by ID */
 export const updateSlot = (slotId, slotData) =>
   API.put(`/slots/${slotId}`, slotData).then((r) => r.data);
+
+/** Admin: Delete slot by ID */
+export const deleteSlot = (slotId) =>
+  API.delete(`/slots/${slotId}`).then((r) => r.data);
+
+/** Admin: Bulk status update slots for a day */
+export const bulkUpdateSlotStatus = (date, isActive) =>
+  API.put("/slots/bulk/status", { date, isActive }).then((r) => r.data);
+
+/** Admin: Bulk delete slots for a day */
+export const bulkDeleteSlots = (date) =>
+  API.delete("/slots/bulk", { data: { date } }).then((r) => r.data);

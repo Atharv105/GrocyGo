@@ -71,11 +71,58 @@ const updateSlot = async (req, res, next) => {
   }
 };
 
+const deleteSlot = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await slotService.deleteSlot(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Slot deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const bulkUpdateSlotStatus = async (req, res, next) => {
+  try {
+    const { date, isActive } = req.body;
+    const result = await slotService.bulkUpdateSlotStatus(date, isActive);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully updated status of ${result.affectedCount} slots.`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const bulkDeleteSlots = async (req, res, next) => {
+  try {
+    const { date } = req.body;
+    const result = await slotService.bulkDeleteSlots(date);
+
+    res.status(200).json({
+      success: true,
+      message: `Deleted ${result.deletedCount} unbooked slots. ${result.keptCount} slots with active bookings were kept.`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSlot,
   getAllSlots,
   generateSlots,
   getAvailableSlots,
   updateSlot,
+  deleteSlot,
+  bulkUpdateSlotStatus,
+  bulkDeleteSlots,
 };
 
