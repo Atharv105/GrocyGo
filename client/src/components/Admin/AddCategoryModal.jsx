@@ -10,6 +10,8 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
   const [loading, setLoading] = useState(false);
   const [cloudinaryCategories, setCloudinaryCategories] = useState([]);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,8 +66,6 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
     autoSelectImage(name);
   }, [name, cloudinaryCategories]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -96,6 +96,16 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
     }
   };
 
+  const suggestions = name
+    ? cloudinaryCategories
+        .map((c) => c.folderName)
+        .filter((val, index, self) => self.indexOf(val) === index)
+        .filter((folder) => folder.toLowerCase().includes(name.toLowerCase()))
+        .slice(0, 5)
+    : [];
+
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
@@ -113,16 +123,60 @@ function AddCategoryModal({ isOpen, onClose, onRefresh }) {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Category Name */}
-          <div>
+          <div className="relative">
             <label className="font-medium text-gray-700">Category Name *</label>
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setShowSuggestions(true);
+                setActiveSuggestionIndex(-1);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setActiveSuggestionIndex(prev => Math.max(prev - 1, -1));
+                } else if (e.key === "Enter") {
+                  if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+                    e.preventDefault();
+                    setName(suggestions[activeSuggestionIndex]);
+                    setShowSuggestions(false);
+                  }
+                } else if (e.key === "Escape") {
+                  setShowSuggestions(false);
+                }
+              }}
               placeholder="Enter Category Name (e.g., Vegetables)"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
               required
             />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-48">
+                {suggestions.map((folder, idx) => (
+                  <button
+                    key={folder}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setName(folder);
+                      setShowSuggestions(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
+                      idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
+                    }`}
+                  >
+                    <span>{folder}</span>
+                    <span className="text-[10px] text-green-600 font-semibold">Suggested Folder</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Description */}

@@ -407,6 +407,7 @@ const getAdminOrderById = async (orderId) => {
         model: OrderItem,
         attributes: [
           "id",
+          "productId",
           "quantity",
           "price",
           "subtotal",
@@ -582,6 +583,122 @@ const updatePaymentStatus = async (orderId, paymentStatus) => {
   }
 };
 
+const updateOrder = async (orderId, items = []) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const order = await Order.findByPk(orderId, {
+      include: [{ model: OrderItem }],
+      transaction,
+    });
+
+    if (!order) {
+      throw new AppError("Order not found", 404);
+    }
+
+    if (order.status === "COMPLETED" || order.status === "CANCELLED") {
+      throw new AppError("Cannot edit a completed or cancelled order", 400);
+    }
+
+    if (!items || items.length === 0) {
+      throw new AppError("Order must have at least one item", 400);
+    }
+
+    // 1. Restore stock of all existing order items
+    for (const oldItem of order.OrderItems) {
+      await Product.increment("stock", {
+        by: oldItem.quantity,
+        where: { id: oldItem.productId },
+        transaction,
+      });
+    }
+
+    // 2. Lock and validate all new products
+    const productIds = items.map((item) => Number(item.productId));
+    const lockedProducts = await Product.findAll({
+      where: { id: productIds },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    const productMap = new Map(lockedProducts.map((p) => [Number(p.id), p]));
+    let totalAmount = 0;
+    const validatedItems = [];
+
+    for (const item of items) {
+      const product = productMap.get(Number(item.productId));
+
+      if (!product || !product.isActive) {
+        throw new AppError(`Product "${product?.name || "Unknown"}" is unavailable`, 400);
+      }
+
+      if (item.quantity > product.stock) {
+        throw new AppError(
+          `Only ${product.stock} item(s) of "${product.name}" available in stock`,
+          400
+        );
+      }
+
+      // Deduct stock
+      await Product.decrement("stock", {
+        by: item.quantity,
+        where: { id: item.productId },
+        transaction,
+      });
+
+      const subtotal = Number(product.price) * item.quantity;
+      totalAmount += subtotal;
+
+      validatedItems.push({
+        orderId: order.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: product.price,
+        subtotal: subtotal,
+      });
+    }
+
+    // 3. Delete existing OrderItems and insert new ones
+    await OrderItem.destroy({
+      where: { orderId: order.id },
+      transaction,
+    });
+
+    for (const valItem of validatedItems) {
+      await OrderItem.create(valItem, { transaction });
+    }
+
+    // 4. Update order total amount
+    order.totalAmount = totalAmount;
+    await order.save({ transaction });
+
+    await transaction.commit();
+
+    // Return the updated order with associations
+    const updatedOrder = await Order.findByPk(order.id, {
+      include: [
+        {
+          model: User,
+          attributes: ["id", "name", "mobile"],
+        },
+        {
+          model: Slot,
+          attributes: ["date", "startTime", "endTime"],
+        },
+        {
+          model: OrderItem,
+          include: [{ model: Product }],
+        },
+      ],
+    });
+
+    return updatedOrder;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
@@ -591,4 +708,5 @@ module.exports = {
   getAdminOrderById,
   updateOrderStatus,
   updatePaymentStatus,
+  updateOrder,
 };

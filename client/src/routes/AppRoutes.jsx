@@ -44,7 +44,7 @@ function ProfileGuard() {
   const isProfileIncomplete =
     isLoggedIn &&
     user?.role === "CUSTOMER" &&
-    (!user?.name || user?.name === "User" || !user?.address);
+    (!user?.name || user?.name === "User");
 
   if (isProfileIncomplete && location.pathname !== "/profile/edit") {
     return <Navigate to="/profile/edit" replace />;
