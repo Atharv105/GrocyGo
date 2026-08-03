@@ -12,6 +12,7 @@ function Products() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -43,7 +44,7 @@ function Products() {
       const queryParams = new URLSearchParams({
         page,
         limit: 10,
-        search,
+        search: debouncedSearch,
         includeInactive: "true",
       });
       if (selectedCategory) {
@@ -73,9 +74,19 @@ function Products() {
     }
   };
 
+  // Debounce search input to filter table automatically on keypress
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   useEffect(() => {
     fetchProducts();
-  }, [page, selectedCategory]);
+  }, [page, selectedCategory, debouncedSearch]);
 
   useEffect(() => {
     fetchCategories();
@@ -85,7 +96,7 @@ function Products() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setPage(1);
-    fetchProducts();
+    setDebouncedSearch(search);
   };
 
   const handleEditClick = (product) => {
@@ -110,11 +121,28 @@ function Products() {
     }
   };
 
-  const suggestions = search
-    ? allProductsForSuggestions
-        .filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-        .slice(0, 5)
-    : [];
+  const suggestions = (() => {
+    if (!search) return [];
+    const query = search.toLowerCase().trim();
+    const matches = new Set();
+
+    for (const p of allProductsForSuggestions) {
+      if (p.name_en && p.name_en.toLowerCase().includes(query)) {
+        matches.add(p.name_en);
+      }
+      if (p.name_mr && p.name_mr.toLowerCase().includes(query)) {
+        matches.add(p.name_mr);
+      }
+      if (p.ProductKeywords) {
+        for (const k of p.ProductKeywords) {
+          if (k.keyword && k.keyword.toLowerCase().includes(query)) {
+            matches.add(k.keyword);
+          }
+        }
+      }
+    }
+    return Array.from(matches).slice(0, 5);
+  })();
 
   return (
     <div className="space-y-6">
@@ -158,10 +186,9 @@ function Products() {
                   if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
                     e.preventDefault();
                     const selected = suggestions[activeSuggestionIndex];
-                    setSearch(selected.name);
+                    setSearch(selected);
                     setShowSuggestions(false);
                     setPage(1);
-                    setTimeout(() => fetchProducts(), 0);
                   }
                 } else if (e.key === "Escape") {
                   setShowSuggestions(false);
@@ -172,23 +199,21 @@ function Products() {
             />
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
-                {suggestions.map((p, idx) => (
+                {suggestions.map((kw, idx) => (
                   <button
-                    key={p.id}
+                    key={kw}
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      setSearch(p.name);
+                      setSearch(kw);
                       setShowSuggestions(false);
                       setPage(1);
-                      setTimeout(() => fetchProducts(), 0);
                     }}
                     className={`w-full text-left px-4 py-2.5 text-xs transition flex items-center justify-between text-gray-700 font-medium ${
                       idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
                     }`}
                   >
-                    <span>{p.name}</span>
-                    <span className="text-green-700 font-bold">₹{parseFloat(p.price).toFixed(2)}</span>
+                    <span className="flex items-center gap-2">🔍 {kw}</span>
                   </button>
                 ))}
               </div>

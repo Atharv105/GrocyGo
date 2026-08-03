@@ -43,10 +43,10 @@ function Topbar({ toggleSidebar }) {
         <button
           onClick={() => navigate(-1)}
           title="Go Back"
-          className="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
+          className="hidden md:flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition text-sm font-medium"
         >
           <FaArrowLeft size={13} />
-          <span className="hidden md:inline">Back</span>
+          <span>Back</span>
         </button>
         <div>
           <h2 className="text-lg md:text-2xl font-bold text-gray-800 leading-tight">Admin Panel</h2>

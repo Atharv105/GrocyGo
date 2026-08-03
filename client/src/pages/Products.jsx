@@ -174,11 +174,38 @@ function Products() {
     }
   };
 
-  const suggestions = searchInput
-    ? allProductsForSuggestions
-        .filter(p => p.name.toLowerCase().includes(searchInput.toLowerCase()))
-        .slice(0, 5)
-    : [];
+  // Debounce searchInput to update search state on keypress automatically
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchInput]);
+
+  const suggestions = (() => {
+    if (!searchInput) return [];
+    const query = searchInput.toLowerCase().trim();
+    const matches = new Set();
+
+    for (const p of allProductsForSuggestions) {
+      if (p.name_en && p.name_en.toLowerCase().includes(query)) {
+        matches.add(p.name_en);
+      }
+      if (p.name_mr && p.name_mr.toLowerCase().includes(query)) {
+        matches.add(p.name_mr);
+      }
+      if (p.ProductKeywords) {
+        for (const k of p.ProductKeywords) {
+          if (k.keyword && k.keyword.toLowerCase().includes(query)) {
+            matches.add(k.keyword);
+          }
+        }
+      }
+    }
+    return Array.from(matches).slice(0, 5);
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -221,8 +248,8 @@ function Products() {
                   if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
                     e.preventDefault();
                     const selected = suggestions[activeSuggestionIndex];
-                    setSearchInput(selected.name);
-                    setSearch(selected.name);
+                    setSearchInput(selected);
+                    setSearch(selected);
                     setPage(1);
                     setShowSuggestions(false);
                   }
@@ -235,14 +262,14 @@ function Products() {
             />
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl z-20 overflow-hidden divide-y divide-gray-50 max-h-56">
-                {suggestions.map((p, idx) => (
+                {suggestions.map((kw, idx) => (
                   <button
-                    key={p.id}
+                    key={kw}
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault(); // Prevents blur before click registers
-                      setSearchInput(p.name);
-                      setSearch(p.name);
+                      setSearchInput(kw);
+                      setSearch(kw);
                       setPage(1);
                       setShowSuggestions(false);
                     }}
@@ -250,8 +277,7 @@ function Products() {
                       idx === activeSuggestionIndex ? "bg-green-50" : "hover:bg-green-50/50"
                     }`}
                   >
-                    <span>{p.name}</span>
-                    <span className="text-green-700 font-bold">₹{parseFloat(p.price).toFixed(2)}</span>
+                    <span className="flex items-center gap-2">🔍 {kw}</span>
                   </button>
                 ))}
               </div>
@@ -268,8 +294,8 @@ function Products() {
 
       <div className="max-w-7xl mx-auto px-4 py-10">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar Filters */}
-          <aside className="md:w-56 shrink-0">
+          {/* Sidebar Filters (Visible on desktop/tablet) */}
+          <aside className="hidden md:block md:w-56 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm p-5 sticky top-24">
               <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Filter size={16} className="text-green-600" /> {t("categories")}
@@ -308,6 +334,26 @@ function Products() {
               ))}
             </div>
           </aside>
+
+          {/* Mobile Category Dropdown (Visible only on mobile/below md) */}
+          <div className="md:hidden w-full mb-4 px-1">
+            <label htmlFor="category-select" className="font-bold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+              <Filter size={14} className="text-green-600" /> {t("categories")}
+            </label>
+            <select
+              id="category-select"
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="w-full bg-white border border-gray-250 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm transition"
+            >
+              <option value="">{t("allProducts")}</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id.toString()}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Main Content */}
           <div className="flex-1">
