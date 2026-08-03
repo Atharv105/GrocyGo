@@ -128,8 +128,12 @@ function Hero() {
           <div className="flex justify-center">
             <div
               className="
-              w-[400px]
-              h-[400px]
+              w-[280px]
+              h-[280px]
+              sm:w-[350px]
+              sm:h-[350px]
+              lg:w-[400px]
+              lg:h-[400px]
               bg-gradient-to-br
               from-green-100
               to-orange-100
@@ -138,23 +142,26 @@ function Hero() {
               items-center
               justify-center
               shadow-xl
+              transition-all
+              duration-300
               "
             >
-              <div className="text-center">
-                <div className="text-8xl">🛒</div>
+              <div className="text-center p-4">
+                <div className="text-6xl sm:text-8xl">🛒</div>
 
                 <h2
                   className="
-                  text-3xl
+                  text-2xl
+                  sm:text-3xl
                   font-bold
                   text-green-700
-                  mt-4
+                  mt-3
                   "
                 >
                   GrocyGo
                 </h2>
 
-                <p className="text-gray-600 mt-2">{t("orderBookPickup")}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">{t("orderBookPickup")}</p>
               </div>
             </div>
           </div>

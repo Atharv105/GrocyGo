@@ -34,6 +34,16 @@ const createProductValidation = [
   body("categoryId")
     .isInt()
     .withMessage("Valid categoryId is required"),
+
+  body("keywords")
+    .optional()
+    .isArray()
+    .withMessage("Keywords must be an array of strings"),
+  body("keywords.*")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("Keyword cannot be empty"),
 ];
 
 module.exports = {

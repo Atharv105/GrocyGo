@@ -39,6 +39,8 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
   const [loading, setLoading] = useState(false);
   const [cloudinaryProducts, setCloudinaryProducts] = useState([]);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [keywords, setKeywords] = useState([]);
+  const [keywordInput, setKeywordInput] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -148,6 +150,7 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
         description_en: descriptionEn.trim(),
         description_mr: descriptionMr.trim(),
         image: image.trim(),
+        keywords,
       });
 
       alert("Product created successfully!");
@@ -161,6 +164,8 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
       setCustomUnit("");
       setCategoryId("");
       setImage("");
+      setKeywords([]);
+      setKeywordInput("");
       onRefresh();
       onClose();
     } catch (err) {
@@ -365,6 +370,43 @@ function AddProductModal({ isOpen, onClose, onRefresh, categories }) {
               placeholder="मराठीत उत्पादन वर्णन प्रविष्ट करा"
               className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none h-20 resize-none"
             />
+          </div>
+
+          {/* Search Keywords */}
+          <div>
+            <label className="font-medium text-gray-700">Search Keywords (for multilingual search)</label>
+            <div className="mt-2 border rounded-xl p-2.5 focus-within:ring-2 focus-within:ring-green-500 bg-white transition min-h-[46px] flex flex-wrap gap-2 items-center">
+              {keywords.map((kw, index) => (
+                <span key={index} className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 font-bold px-2.5 py-1 rounded-lg text-xs">
+                  {kw}
+                  <button
+                    type="button"
+                    onClick={() => setKeywords(prev => prev.filter((_, idx) => idx !== index))}
+                    className="text-green-500 hover:text-green-700 font-extrabold transition focus:outline-none text-sm"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                value={keywordInput}
+                onChange={(e) => setKeywordInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const val = keywordInput.trim();
+                    if (val && !keywords.includes(val)) {
+                      setKeywords(prev => [...prev, val]);
+                    }
+                    setKeywordInput("");
+                  }
+                }}
+                placeholder={keywords.length === 0 ? "Type keyword & press Enter/comma (e.g. potato, बटाटा)" : "Add more..."}
+                className="flex-1 min-w-[120px] bg-transparent outline-none text-xs font-semibold text-gray-700"
+              />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">Press Enter or comma to add each keyword (e.g., english, marathi, synonyms, etc.)</p>
           </div>
 
           {/* Image/Emoji */}

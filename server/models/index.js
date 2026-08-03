@@ -15,6 +15,7 @@ db.OrderItem = require("./OrderItem");
 db.Slot = require("./Slot");
 db.RefreshToken = require("./RefreshToken");
 db.Otp = require("./Otp");
+db.ProductKeyword = require("./ProductKeyword");
 
 // Relationships
 db.Category.hasMany(db.Product, {
@@ -108,6 +109,16 @@ db.User.hasMany(db.RefreshToken, {
 
 db.RefreshToken.belongsTo(db.User, {
   foreignKey: "userId",
+});
+
+// Product ↔ ProductKeyword
+db.Product.hasMany(db.ProductKeyword, {
+  foreignKey: "productId",
+  onDelete: "CASCADE",
+});
+
+db.ProductKeyword.belongsTo(db.Product, {
+  foreignKey: "productId",
 });
 
 module.exports = db;
