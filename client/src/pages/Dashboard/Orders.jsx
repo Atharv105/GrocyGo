@@ -737,26 +737,7 @@ function Orders() {
                           <span className="text-xl font-extrabold text-green-700">₹{editItemsState.reduce((sum, item) => sum + parseFloat(item.price || 0) * item.quantity, 0).toFixed(2)}</span>
                         </div>
 
-                        <div className="flex items-center gap-3 justify-end pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingItems(false)}
-                            className="px-4 py-2 border rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition"
-                          >
-                            {t("cancel", { defaultValue: "Cancel" })}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveEditedItems}
-                            disabled={editItemsSaving}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition"
-                          >
-                            {editItemsSaving ? (
-                              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            ) : null}
-                            {t("saveChanges", { defaultValue: "Save Changes" })}
-                          </button>
-                        </div>
+                        {/* Buttons moved to main modal footer */}
                       </>
                     )}
                   </div>
@@ -765,13 +746,36 @@ function Orders() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-              <button
-                onClick={handleCloseDetailsModal}
-                className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition"
-              >
-                {t("closeDetails", { defaultValue: "Close Details" })}
-              </button>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              {isEditingItems ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingItems(false)}
+                    className="px-5 py-2.5 border rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition bg-white"
+                  >
+                    {t("cancel", { defaultValue: "Cancel" })}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveEditedItems}
+                    disabled={editItemsSaving}
+                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold px-6 py-2.5 rounded-xl text-sm flex items-center gap-1.5 transition"
+                  >
+                    {editItemsSaving ? (
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : null}
+                    {t("saveChanges", { defaultValue: "Save Changes" })}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleCloseDetailsModal}
+                  className="bg-gray-800 hover:bg-gray-900 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition"
+                >
+                  {t("closeDetails", { defaultValue: "Close Details" })}
+                </button>
+              )}
             </div>
           </div>
         </div>

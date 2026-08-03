@@ -311,6 +311,21 @@ function Navbar() {
             {!isLoggedIn ? (
               <div className="space-y-4">
                 <Link
+                  to="/products"
+                  className="
+                    block
+                    w-full
+                    text-center
+                    py-3
+                    rounded-xl
+                    bg-green-50
+                    text-green-700
+                    font-medium
+                  "
+                >
+                  🛍️ {t("shop")}
+                </Link>
+                <Link
                   to="/login"
                   className="
                     block
@@ -334,6 +349,13 @@ function Navbar() {
                 <div className="pb-2 border-b border-gray-100 mb-2 flex justify-center text-gray-800">
                   <LanguageSwitcher />
                 </div>
+
+                <Link
+                  to="/products"
+                  className="block font-medium text-gray-700 hover:text-green-600 transition"
+                >
+                  🛍️ {t("shop")}
+                </Link>
 
                 <Link to={user?.role === "ADMIN" ? "/admin" : "/dashboard"} className="block font-medium">
                   {user?.role === "ADMIN" ? t("adminPanel", { defaultValue: "Admin Panel" }) : t("dashboard")}
