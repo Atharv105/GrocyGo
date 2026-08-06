@@ -59,14 +59,15 @@ function Home() {
 
   return (
     <>
-      {/* Dynamic Banner Carousel (falls back to static Hero if none configured) */}
-      {hasBanners ? (
-        <div className="bg-gradient-to-b from-green-50/50 to-white">
+      {/* Dynamic Offer Poster Banner Slider (Amazon / Flipkart Style) - First on top */}
+      {hasBanners && (
+        <div className="bg-gradient-to-b from-green-50/60 via-white to-transparent pt-2">
           <OfferCarousel banners={offersData.heroBanners} />
         </div>
-      ) : (
-        <Hero />
       )}
+
+      {/* Main Hero Banner */}
+      <Hero />
 
       {/* Categories block */}
       <Categories />
@@ -153,40 +154,84 @@ function Home() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {offersData.todayOffers
-                .flatMap((offer) =>
-                  (offer.Products || []).map((product) => {
-                    const discountValue = parseFloat(offer.discountValue || 0);
-                    const originalPrice = parseFloat(product.price);
-                    let finalPrice = originalPrice;
-                    let discount = 0;
-                    let badge = "";
+            {/* Render Offer Campaign Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {offersData.todayOffers.map((offer) => {
+                let badge = "";
+                if (offer.offerType === "BUY_X_GET_Y" || offer.discountType === "FREE_QTY") {
+                  badge = `BUY ${offer.buyQuantity || 1} GET ${offer.freeQuantity || 1} FREE`;
+                } else if (offer.discountType === "PERCENTAGE" || offer.offerType === "PERCENTAGE_DISCOUNT") {
+                  badge = `${Math.round(offer.discountValue || 0)}% OFF`;
+                } else if (offer.discountType === "FIXED" || offer.offerType === "FIXED_DISCOUNT") {
+                  badge = `FLAT ₹${Math.round(offer.discountValue || 0)} OFF`;
+                } else {
+                  badge = "SPECIAL PROMO";
+                }
 
-                    if (offer.discountType === "PERCENTAGE" || offer.offerType === "PERCENTAGE_DISCOUNT") {
-                      discount = originalPrice * (discountValue / 100);
-                      finalPrice = originalPrice - discount;
-                      badge = t("percentageOff", { value: Math.round(discountValue) });
-                    } else if (offer.discountType === "FIXED" || offer.offerType === "FIXED_DISCOUNT") {
-                      discount = discountValue;
-                      finalPrice = originalPrice - discount;
-                      badge = t("fixedOff", { value: Math.round(discountValue) });
-                    }
-
-                    return {
-                      ...product,
-                      originalPrice,
-                      finalPrice,
-                      discount,
-                      offerBadge: badge,
-                    };
-                  })
-                )
-                .slice(0, 4)
-                .map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+                return (
+                  <div key={offer.id} className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-green-900 via-emerald-800 to-teal-900 text-white p-6 sm:p-7 flex flex-col justify-between shadow-lg group hover:shadow-2xl transition-all border border-green-700/30">
+                    {offer.bannerImage && (
+                      <img src={offer.bannerImage} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-500" alt="" />
+                    )}
+                    <div className="relative z-10 space-y-2">
+                      <span className="bg-amber-400 text-amber-950 font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm inline-block">
+                        {badge}
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-extrabold leading-tight text-white drop-shadow">{offer.title}</h3>
+                      {offer.description && <p className="text-xs text-gray-200 line-clamp-2 drop-shadow">{offer.description}</p>}
+                      {parseFloat(offer.minimumPurchase) > 0 && (
+                        <p className="text-xs font-semibold text-amber-200">Min. order ₹{offer.minimumPurchase}</p>
+                      )}
+                    </div>
+                    <div className="relative z-10 pt-5">
+                      <Link to="/products" className="inline-flex items-center gap-2 bg-white text-green-800 hover:bg-green-50 font-extrabold px-4 py-2 rounded-xl shadow-md transition text-xs">
+                        <span>Shop Offer Now</span> &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+
+            {/* Mapped Discounted Products Grid (if any exist) */}
+            {offersData.todayOffers.some(o => o.Products && o.Products.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-4">
+                {offersData.todayOffers
+                  .flatMap((offer) =>
+                    (offer.Products || []).map((product) => {
+                      const discountValue = parseFloat(offer.discountValue || 0);
+                      const originalPrice = parseFloat(product.price);
+                      let finalPrice = originalPrice;
+                      let discount = 0;
+                      let badge = "";
+
+                      if (offer.discountType === "PERCENTAGE" || offer.offerType === "PERCENTAGE_DISCOUNT") {
+                        discount = originalPrice * (discountValue / 100);
+                        finalPrice = originalPrice - discount;
+                        badge = t("percentageOff", { value: Math.round(discountValue) });
+                      } else if (offer.discountType === "FIXED" || offer.offerType === "FIXED_DISCOUNT") {
+                        discount = discountValue;
+                        finalPrice = originalPrice - discount;
+                        badge = t("fixedOff", { value: Math.round(discountValue) });
+                      } else if (offer.discountType === "FREE_QTY" || offer.offerType === "BUY_X_GET_Y") {
+                        badge = `Buy ${offer.buyQuantity} Get ${offer.freeQuantity} Free`;
+                      }
+
+                      return {
+                        ...product,
+                        originalPrice,
+                        finalPrice,
+                        discount,
+                        offerBadge: badge,
+                      };
+                    })
+                  )
+                  .slice(0, 4)
+                  .map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+              </div>
+            )}
           </div>
         </section>
       )}
