@@ -29,6 +29,7 @@ const UNIT_OPTIONS = [
 function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
   const [nameEn, setNameEn] = useState("");
   const [nameMr, setNameMr] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [unit, setUnit] = useState("");
@@ -65,6 +66,7 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
     if (product) {
       setNameEn(product.name_en || "");
       setNameMr(product.name_mr || "");
+      setPurchasePrice(product.purchasePrice || "");
       setPrice(product.price || "");
       setStock(product.stock || "0");
       
@@ -155,16 +157,22 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
 
     const finalUnit = unit === "Other" ? customUnit.trim() : unit.trim();
 
-    if (!nameEn.trim() || !nameMr.trim() || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
+    if (!nameEn.trim() || !nameMr.trim() || !purchasePrice || !price || !stock || !finalUnit || !categoryId || !image.trim()) {
       alert("All fields marked with * are required");
       return;
     }
 
+    const purchasePriceNum = parseFloat(purchasePrice);
     const priceNum = parseFloat(price);
     const stockNum = parseInt(stock);
 
+    if (isNaN(purchasePriceNum) || purchasePriceNum < 0) {
+      alert("Purchase Price must be a positive number or 0");
+      return;
+    }
+
     if (isNaN(priceNum) || priceNum <= 0) {
-      alert("Price must be a number greater than 0");
+      alert("Selling Price must be a number greater than 0");
       return;
     }
 
@@ -178,6 +186,7 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
       await API.put(`/products/${product.id}`, {
         name_en: nameEn.trim(),
         name_mr: nameMr.trim(),
+        purchasePrice: purchasePriceNum,
         price: priceNum,
         stock: stockNum,
         unit: finalUnit,
@@ -240,18 +249,32 @@ function EditProductModal({ isOpen, onClose, product, onRefresh, categories }) {
               />
             </div>
 
-            {/* Price */}
-            <div>
-              <label className="font-medium text-gray-700">Price (₹) *</label>
-              <input
-                type="number"
-                step="0.01"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="Price"
-                className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
-                required
-              />
+            {/* Pricing */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="font-medium text-gray-700">Purchase Price (₹) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={purchasePrice}
+                  onChange={(e) => setPurchasePrice(e.target.value)}
+                  placeholder="Purchase Price"
+                  className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="font-medium text-gray-700">Selling Price (₹) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Selling Price"
+                  className="w-full mt-2 border rounded-xl px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+                  required
+                />
+              </div>
             </div>
 
             {/* Stock */}

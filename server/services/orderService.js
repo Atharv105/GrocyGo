@@ -7,9 +7,11 @@ const {
   Order,
   OrderItem,
   Slot,
+  Category,
 } = require("../models");
 const AppError = require("../utils/AppError");
 const dayjs = require("dayjs");
+const { calculateCartTotals } = require("../utils/offerCalculator");
 
 
 const checkout = async (userId, slotId, paymentMethod = "CASH") => {
@@ -67,6 +69,12 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
           include: [
             {
               model: Product,
+              include: [
+                {
+                  model: Category,
+                  attributes: ["id", "name_en", "name_mr"]
+                }
+              ]
             },
           ],
         },
@@ -118,11 +126,13 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
         );
       }
 
-      // Calculate total amount
-      totalAmount += Number(product.price) * item.quantity;
     }
     console.log("Stock validation successful.");
-    console.log("Total Amount:", totalAmount);
+
+    // Calculate total amount using dynamic offer calculation based on pickup date
+    const totals = await calculateCartTotals(cart.CartItems, slot.date);
+    totalAmount = totals.grandTotal;
+    console.log("Total Amount (after discount):", totalAmount);
 
     // Create Order
     const order = await Order.create(
@@ -140,16 +150,30 @@ const checkout = async (userId, slotId, paymentMethod = "CASH") => {
     );
     console.log("Order created:", order.id);
 
-    // Create Order Items
+    // Create Order Items with offer calculations applied
     for (const item of cart.CartItems) {
       const product = productMap.get(item.productId);
+      const computedItem = totals.items.find(it => it.productId === item.productId);
+
+      const itemPrice = computedItem ? computedItem.finalPrice : Number(product.price);
+      const itemSubtotal = computedItem ? computedItem.totalPrice : (Number(product.price) * item.quantity);
+
+      const purchasePriceAtOrder = Number(product.purchasePrice || 0);
+      const sellingPriceAtOrder = Number(product.price);
+      const finalSellingPriceAtOrder = itemPrice;
+      const discountAtOrder = sellingPriceAtOrder - finalSellingPriceAtOrder;
+
       await OrderItem.create(
         {
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
-          price: product.price,
-          subtotal: Number(product.price) * item.quantity,
+          price: itemPrice,
+          subtotal: itemSubtotal,
+          purchasePriceAtOrder,
+          sellingPriceAtOrder,
+          discountAtOrder,
+          finalSellingPriceAtOrder
         },
         {
           transaction,
@@ -244,6 +268,7 @@ const getOrderById = async (userId, orderId) => {
               "name_mr",
               "image",
               "unit",
+              "price",
             ],
           },
         ],
@@ -361,6 +386,7 @@ const getAllOrders = async (query = {}) => {
       "totalAmount",
       "status",
       "paymentStatus",
+      "paymentMethod",
       "createdAt",
     ],
     include: [
@@ -372,6 +398,10 @@ const getAllOrders = async (query = {}) => {
         model: Slot,
         attributes: ["date", "startTime", "endTime"],
       },
+      {
+        model: OrderItem,
+        attributes: ["quantity", "purchasePriceAtOrder", "finalSellingPriceAtOrder"],
+      }
     ],
     order: [["createdAt", "DESC"]],
     limit: Number(limit),
@@ -393,6 +423,7 @@ const getAdminOrderById = async (orderId) => {
       "totalAmount",
       "status",
       "paymentStatus",
+      "paymentMethod",
       "createdAt",
     ],
     include: [
@@ -422,6 +453,7 @@ const getAdminOrderById = async (orderId) => {
               "name_mr",
               "image",
               "unit",
+              "price",
             ],
           },
         ],
@@ -585,6 +617,27 @@ const updatePaymentStatus = async (orderId, paymentStatus) => {
   }
 };
 
+const updateOrderPaymentMethod = async (orderId, paymentMethod) => {
+  const validMethods = ["ONLINE", "CASH"];
+  if (!validMethods.includes(paymentMethod)) {
+    throw new AppError("Invalid payment method", 400);
+  }
+
+  const order = await Order.findByPk(orderId);
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  if (order.status === "COMPLETED" || order.status === "CANCELLED") {
+    throw new AppError("Cannot change payment method of a completed or cancelled order", 400);
+  }
+
+  order.paymentMethod = paymentMethod;
+  await order.save();
+
+  return order;
+};
+
 const updateOrder = async (orderId, items = []) => {
   const transaction = await sequelize.transaction();
 
@@ -710,5 +763,6 @@ module.exports = {
   getAdminOrderById,
   updateOrderStatus,
   updatePaymentStatus,
+  updateOrderPaymentMethod,
   updateOrder,
 };

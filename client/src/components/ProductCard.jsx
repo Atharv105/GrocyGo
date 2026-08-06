@@ -11,6 +11,23 @@ function ProductCard({ product }) {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
+  const translateBadge = (badge) => {
+    if (!badge) return "";
+    const buyGetMatch = badge.match(/Buy\s+(\d+)\s+Get\s+(\d+)\s+Free/i);
+    if (buyGetMatch) {
+      return t("buyXGetYFree", { buy: buyGetMatch[1], get: buyGetMatch[2], defaultValue: badge });
+    }
+    const percentMatch = badge.match(/(\d+)%\s+OFF/i);
+    if (percentMatch) {
+      return t("percentageOff", { value: percentMatch[1], defaultValue: badge });
+    }
+    const fixedMatch = badge.match(/₹(\d+)\s+OFF/i);
+    if (fixedMatch) {
+      return t("fixedOff", { value: fixedMatch[1], defaultValue: badge });
+    }
+    return badge;
+  };
+
   const handleAdd = async () => {
     if (!isLoggedIn) {
       alert("Please login to add items to cart!");
@@ -31,8 +48,15 @@ function ProductCard({ product }) {
 
   return (
     <div className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col">
-      {/* Stock Badge */}
-      <div className="flex justify-end items-center mb-1">
+      {/* Badges */}
+      <div className="flex justify-between items-center mb-1 w-full">
+        {product.offerBadge ? (
+          <span className="bg-rose-600 text-white text-[10px] px-2.5 py-1 rounded-full font-extrabold tracking-wide uppercase shadow-sm">
+            {translateBadge(product.offerBadge)}
+          </span>
+        ) : (
+          <span />
+        )}
         {product.stock <= 5 && product.stock > 0 && (
           <span className="bg-orange-100 text-orange-600 text-xs px-3 py-1 rounded-full font-medium">
             {t("lowStock")}
@@ -47,7 +71,7 @@ function ProductCard({ product }) {
 
       {/* Product image + info */}
       <div className="text-center mt-2 flex-1 flex flex-col items-center">
-        <div className="w-32 h-32 flex items-center justify-center overflow-hidden rounded-2xl bg-gray-50 border shadow-sm">
+        <div className="w-32 h-32 flex items-center justify-center overflow-hidden rounded-2xl bg-gray-50 border shadow-sm relative">
           {product.image && product.image.startsWith("http") ? (
             <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
           ) : (
@@ -55,13 +79,31 @@ function ProductCard({ product }) {
           )}
         </div>
 
-        <h3 className="mt-5 text-lg font-bold text-gray-800">{product.name}</h3>
+        <h3 className="mt-5 text-lg font-bold text-gray-800 line-clamp-1">{product.name}</h3>
 
-        <p className="text-gray-500 mt-2 text-sm">{product.unit}</p>
+        <p className="text-gray-500 mt-1 text-sm">{product.unit}</p>
 
-        <h4 className="text-2xl font-bold text-green-700 mt-3">
-          ₹{parseFloat(product.price).toFixed(2)}
-        </h4>
+        <div className="mt-3 flex flex-col items-center">
+          {product.discount > 0 ? (
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 justify-center">
+                <span className="line-through text-gray-400 text-sm font-semibold">
+                  ₹{parseFloat(product.originalPrice).toFixed(2)}
+                </span>
+                <span className="text-2xl font-black text-green-700">
+                  ₹{parseFloat(product.finalPrice).toFixed(2)}
+                </span>
+              </div>
+              <p className="text-[10px] text-green-600 font-extrabold uppercase tracking-wide">
+                {t("savePrefix", { value: parseFloat(product.discount).toFixed(2), defaultValue: `Save ₹${parseFloat(product.discount).toFixed(2)}` })}
+              </p>
+            </div>
+          ) : (
+            <span className="text-2xl font-black text-green-700">
+              ₹{parseFloat(product.price).toFixed(2)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Add to Cart Button */}

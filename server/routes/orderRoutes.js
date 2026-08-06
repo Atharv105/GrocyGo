@@ -12,6 +12,7 @@ const { checkout,
     getAdminOrderById,
     updateOrderStatus,
     updatePaymentStatus,
+    updatePaymentMethod,
     updateOrder,
     updateMyOrder
 } = require("../controllers/orderController");
@@ -53,6 +54,13 @@ router.patch(
   authMiddleware,
   adminMiddleware,
   updatePaymentStatus
+);
+
+router.patch(
+  "/admin/orders/:id/payment-method",
+  authMiddleware,
+  adminMiddleware,
+  updatePaymentMethod
 );
 
 router.put(

@@ -9,8 +9,12 @@ function AdminReports() {
     lowStock: 0,
   });
   const [allOrders, setAllOrders] = useState([]);
-  const [period, setPeriod] = useState("7_DAYS"); // "7_DAYS", "30_DAYS", "ALL_TIME"
-  const [selectedDate, setSelectedDate] = useState("");
+  
+  const defaultStartDate = new Date();
+  defaultStartDate.setDate(defaultStartDate.getDate() - 6);
+  const [startDate, setStartDate] = useState(defaultStartDate.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  
   const [loading, setLoading] = useState(true);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
@@ -46,21 +50,35 @@ function AdminReports() {
 
   const reportData = useMemo(() => {
     // 1. Parse chart end date (local timezone safe)
-    let chartEndDate;
-    if (selectedDate) {
-      const [year, month, day] = selectedDate.split("-").map(Number);
+    let chartEndDate = new Date();
+    if (endDate) {
+      const [year, month, day] = endDate.split("-").map(Number);
       chartEndDate = new Date(year, month - 1, day);
-    } else {
-      chartEndDate = new Date();
     }
     chartEndDate.setHours(23, 59, 59, 999);
 
-    // 2. Define the days to draw for the chart (7 or 30 days)
-    const daysToDraw = period === "7_DAYS" ? 7 : 30;
+    // 2. Parse chart start date (local timezone safe)
+    let chartStartDate = new Date();
+    if (startDate) {
+      const [year, month, day] = startDate.split("-").map(Number);
+      chartStartDate = new Date(year, month - 1, day);
+    } else {
+      chartStartDate.setDate(chartStartDate.getDate() - 6);
+    }
+    chartStartDate.setHours(0, 0, 0, 0);
 
-    // 3. Initialize daily sales map for the chart period (local timezone safe)
+    // 3. Define the days to draw for the chart
+    let diffTime = chartEndDate - chartStartDate;
+    if (diffTime < 0) diffTime = 0; // fallback if dates are inverted
+    let daysToDraw = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    
+    // Limit chart to 60 days to prevent crowding, but keep stats for the whole range
+    const maxChartDays = 60;
+    const actualChartDays = Math.min(daysToDraw, maxChartDays);
+
+    // 4. Initialize daily sales map for the chart period (local timezone safe)
     const dailyMap = {};
-    for (let i = daysToDraw - 1; i >= 0; i--) {
+    for (let i = actualChartDays - 1; i >= 0; i--) {
       const d = new Date(chartEndDate);
       d.setDate(chartEndDate.getDate() - i);
       const year = d.getFullYear();
@@ -69,7 +87,7 @@ function AdminReports() {
       const dateStr = `${year}-${month}-${day}`;
       
       dailyMap[dateStr] = {
-        dateLabel: daysToDraw <= 7
+        dateLabel: actualChartDays <= 7
           ? d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" })
           : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
         shortLabel: d.toLocaleDateString("en-IN", { day: "numeric" }),
@@ -77,31 +95,15 @@ function AdminReports() {
       };
     }
 
-    // 4. Filter orders for stats (summary cards & status distribution)
-    let statsOrders = allOrders;
-    if (selectedDate) {
-      // If a slot date is selected, the stats reflect that specific slot date
-      statsOrders = statsOrders.filter((o) => o.Slot && o.Slot.date === selectedDate);
-    } else {
-      // Otherwise, filter by period (createdAt)
-      const now = new Date();
-      if (period === "7_DAYS") {
-        const minDate = new Date();
-        minDate.setDate(now.getDate() - 6);
-        minDate.setHours(0, 0, 0, 0);
-        statsOrders = statsOrders.filter((o) => new Date(o.createdAt) >= minDate);
-      } else if (period === "30_DAYS") {
-        const minDate = new Date();
-        minDate.setDate(now.getDate() - 29);
-        minDate.setHours(0, 0, 0, 0);
-        statsOrders = statsOrders.filter((o) => new Date(o.createdAt) >= minDate);
-      }
-    }
+    // 5. Filter orders for stats (summary cards & status distribution)
+    const statsOrders = allOrders.filter((o) => {
+      if (!o.createdAt) return false;
+      const created = new Date(o.createdAt);
+      return created >= chartStartDate && created <= chartEndDate;
+    });
 
-    // 5. Populate the daily sales chart using ALL orders that fall within the chart's date range
-    allOrders.forEach((o) => {
-      if (!o.createdAt) return;
-
+    // 6. Populate the daily sales chart
+    statsOrders.forEach((o) => {
       const createdDate = new Date(o.createdAt);
       const year = createdDate.getFullYear();
       const month = String(createdDate.getMonth() + 1).padStart(2, "0");
@@ -113,11 +115,23 @@ function AdminReports() {
       }
     });
 
-    // 6. Calculate stats metrics from statsOrders
+    // 7. Calculate stats metrics from statsOrders
     const paidOrders = statsOrders.filter((o) => o.paymentStatus === "PAID");
     const totalRevenue = paidOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || 0), 0);
     const aov = paidOrders.length ? totalRevenue / paidOrders.length : 0;
     const orderCount = statsOrders.length;
+    
+    // Profit Calculation
+    const totalProfit = paidOrders.reduce((sum, o) => {
+      let orderProfit = 0;
+      if (o.OrderItems && o.OrderItems.length > 0) {
+        o.OrderItems.forEach(item => {
+          const itemProfit = (parseFloat(item.finalSellingPriceAtOrder || 0) - parseFloat(item.purchasePriceAtOrder || 0)) * item.quantity;
+          orderProfit += itemProfit;
+        });
+      }
+      return sum + orderProfit;
+    }, 0);
 
     // Status distribution from statsOrders
     const dist = { PENDING: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0 };
@@ -129,12 +143,13 @@ function AdminReports() {
 
     return {
       totalRevenue,
+      totalProfit,
       aov,
       orderCount,
       statusDistribution: dist,
       dailySales: Object.values(dailyMap),
     };
-  }, [allOrders, period, selectedDate]);
+  }, [allOrders, startDate, endDate]);
 
   const statCards = [
     {
@@ -142,7 +157,14 @@ function AdminReports() {
       value: `₹${reportData.totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
       icon: <FaDollarSign />,
       color: "bg-emerald-500",
-      text: `Paid earnings (${selectedDate ? selectedDate : period === "7_DAYS" ? "last 7d" : period === "30_DAYS" ? "last 30d" : "all-time"})`,
+      text: `Paid earnings (selected date range)`,
+    },
+    {
+      label: "Total Profit",
+      value: `₹${reportData.totalProfit.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+      icon: <FaChartBar />,
+      color: "bg-teal-500",
+      text: `Calculated profit (selected date range)`,
     },
     {
       label: "Average Order Value (AOV)",
@@ -156,7 +178,7 @@ function AdminReports() {
       value: reportData.orderCount.toString(),
       icon: <FaShoppingBag />,
       color: "bg-purple-500",
-      text: `Placed logs (${selectedDate ? selectedDate : period === "7_DAYS" ? "7d" : period === "30_DAYS" ? "30d" : "all"})`,
+      text: `Placed logs (selected date range)`,
     },
     {
       label: "Total Products",
@@ -202,46 +224,22 @@ function AdminReports() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          {/* Period Filter Buttons */}
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200/50 shadow-sm">
-            {[
-              { id: "7_DAYS", label: "7 Days" },
-              { id: "30_DAYS", label: "30 Days" },
-              { id: "ALL_TIME", label: "All Time" },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => setPeriod(opt.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  period === opt.id
-                    ? "bg-white text-green-700 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Slot Date Filter */}
+          {/* Date Range Filter */}
           <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap pl-1">Slot Date:</span>
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap pl-1">From:</span>
             <input
               type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
               className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
             />
-            {selectedDate && (
-              <button
-                type="button"
-                onClick={() => setSelectedDate("")}
-                className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1"
-                title="Clear Date"
-              >
-                Clear
-              </button>
-            )}
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap pl-1">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+            />
           </div>
         </div>
       </div>
@@ -270,9 +268,7 @@ function AdminReports() {
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2">
               <FaChartBar className="text-green-600" />{" "}
-              {selectedDate
-                ? `Daily Revenue (${numDays} Days Ending ${new Date(selectedDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })})`
-                : `Daily Revenue (${period === "7_DAYS" ? "Last 7 Days" : period === "30_DAYS" ? "Last 30 Days" : "Last 30 Days Trend"})`}
+              {`Daily Revenue (${numDays} Days)`}
             </h2>
             <p className="text-xs text-gray-400 mb-6">Excludes pending or cancelled orders.</p>
           </div>

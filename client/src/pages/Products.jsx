@@ -9,6 +9,25 @@ import { useTranslation } from "react-i18next";
 
 function ProductCard({ product, onAddToCart, adding }) {
   const { t } = useTranslation();
+  const hasDiscount = product.discount > 0;
+
+  const translateBadge = (badge) => {
+    if (!badge) return "";
+    const buyGetMatch = badge.match(/Buy\s+(\d+)\s+Get\s+(\d+)\s+Free/i);
+    if (buyGetMatch) {
+      return t("buyXGetYFree", { buy: buyGetMatch[1], get: buyGetMatch[2], defaultValue: badge });
+    }
+    const percentMatch = badge.match(/(\d+)%\s+OFF/i);
+    if (percentMatch) {
+      return t("percentageOff", { value: percentMatch[1], defaultValue: badge });
+    }
+    const fixedMatch = badge.match(/₹(\d+)\s+OFF/i);
+    if (fixedMatch) {
+      return t("fixedOff", { value: fixedMatch[1], defaultValue: badge });
+    }
+    return badge;
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col">
       <div className="h-44 bg-gradient-to-br from-green-50 to-orange-50 flex items-center justify-center text-6xl relative overflow-hidden">
@@ -17,6 +36,13 @@ function ProductCard({ product, onAddToCart, adding }) {
         ) : (
           product.image || "🛍️"
         )}
+
+        {product.offerBadge && (
+          <span className="absolute top-3 left-3 bg-rose-600 text-white text-[9px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full shadow-sm">
+            {translateBadge(product.offerBadge)}
+          </span>
+        )}
+
         {product.stock <= 5 && product.stock > 0 && (
           <span className="absolute top-3 right-3 bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">
             {t("lowStock")}
@@ -33,21 +59,37 @@ function ProductCard({ product, onAddToCart, adding }) {
         <p className="text-xs text-green-600 font-semibold uppercase tracking-wide mb-1">
           {product.Category?.name || t("generalCategory", { defaultValue: "General" })}
         </p>
-        <h3 className="font-bold text-gray-800 text-lg leading-snug">{product.name}</h3>
+        <h3 className="font-bold text-gray-800 text-lg leading-snug line-clamp-1">{product.name}</h3>
         {product.description && (
           <p className="text-gray-400 text-sm mt-1 line-clamp-2">{product.description}</p>
         )}
 
         <div className="mt-auto pt-4 flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-green-700">₹{parseFloat(product.price).toFixed(2)}</p>
-            <p className="text-xs text-gray-400">{product.unit}</p>
+            {hasDiscount ? (
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="line-through text-gray-400 text-xs font-semibold">
+                    ₹{parseFloat(product.originalPrice).toFixed(2)}
+                  </span>
+                  <span className="text-2xl font-black text-green-700">
+                    ₹{parseFloat(product.finalPrice).toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-green-600 font-bold uppercase tracking-wide">
+                  {t("savePrefix", { value: parseFloat(product.discount).toFixed(2), defaultValue: `Save ₹${parseFloat(product.discount).toFixed(2)}` })}
+                </p>
+              </div>
+            ) : (
+              <p className="text-2xl font-bold text-green-700">₹{parseFloat(product.price).toFixed(2)}</p>
+            )}
+            <p className="text-xs text-gray-450 mt-0.5 font-medium">{product.unit}</p>
           </div>
 
           <button
             onClick={() => onAddToCart(product.id)}
             disabled={product.stock === 0 || adding === product.id}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition"
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition shrink-0 self-end"
           >
             {adding === product.id ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -81,6 +123,7 @@ function Products() {
   const [toast, setToast] = useState("");
   const [sortBy, setSortBy] = useState("createdAt-DESC");
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [activeOffers, setActiveOffers] = useState([]);
 
   // Suggestions State
   const [allProductsForSuggestions, setAllProductsForSuggestions] = useState([]);
@@ -135,9 +178,21 @@ function Products() {
     }
   };
 
+  const fetchActiveOffers = async () => {
+    try {
+      const res = await API.get("/offers/homepage");
+      if (res.data?.success) {
+        setActiveOffers(res.data.data.allActiveOffers || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
     fetchAllProductsForSuggestions();
+    fetchActiveOffers();
   }, [i18n.language]);
 
   useEffect(() => {
@@ -404,6 +459,29 @@ function Products() {
                 </select>
               </div>
             </div>
+
+            {/* Category Offer Banner */}
+            {selectedCategory && (() => {
+              const currentCat = categories.find(c => c.id.toString() === selectedCategory);
+              const catOffer = activeOffers.find(offer => offer.Categories?.some(cat => cat.id.toString() === selectedCategory));
+              if (!currentCat || !catOffer) return null;
+              
+              return (
+                <div className="bg-rose-50 border border-rose-250 rounded-2xl p-5 mb-6 flex items-center justify-between shadow-sm">
+                  <div>
+                    <h3 className="text-rose-900 font-black text-lg flex items-center gap-1.5">
+                      🎉 {currentCat.name} - {catOffer.discountType === "PERCENTAGE" || catOffer.offerType === "PERCENTAGE_DISCOUNT" ? t("percentageOff", { value: Math.round(catOffer.discountValue) }) : t("fixedOff", { value: Math.round(catOffer.discountValue) })}
+                    </h3>
+                    <p className="text-rose-600 text-xs mt-1.5 font-bold">
+                      {catOffer.title} &bull; {catOffer.description || t("catalogPromoActive")}
+                    </p>
+                  </div>
+                  <span className="text-[9px] bg-rose-600 text-white font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm shrink-0">
+                    {t("offerActive")}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* Products Grid */}
             {loading ? (

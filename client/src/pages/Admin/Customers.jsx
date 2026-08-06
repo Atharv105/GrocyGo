@@ -207,9 +207,9 @@ function AdminCustomers() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div className="w-full">
+            <table className="w-full text-left text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50 text-gray-400 text-xs font-semibold uppercase tracking-wider">
                   <th className="py-3.5 pl-6">Customer Info</th>

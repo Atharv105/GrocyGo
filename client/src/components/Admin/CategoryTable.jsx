@@ -48,8 +48,8 @@ function CategoryTable({ categories, loading, onRefresh }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-      <table className="w-full">
+    <div className="bg-white rounded-2xl shadow-md overflow-x-auto">
+      <table className="w-full min-w-[700px]">
         <thead className="bg-green-600 text-white">
           <tr>
             <th className="p-4">Image/Emoji</th>

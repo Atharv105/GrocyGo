@@ -7,7 +7,7 @@ const adminMiddleware = require("../middleware/adminMiddleware");
 
 const { createSlot , getAllSlots, generateSlots, getAvailableSlots, updateSlot, deleteSlot, bulkUpdateSlotStatus, bulkDeleteSlots} = require("../controllers/slotController");
 
-const { createSlotValidation, generateSlotsValidation } = require("../validations/slotValidation");
+const { createSlotValidation, generateSlotsValidation, updateSlotValidation } = require("../validations/slotValidation");
 const validationMiddleware = require("../middleware/validationMiddleware");
 
 router.post(
@@ -59,7 +59,7 @@ router.put(
   "/:id",
   authMiddleware,
   adminMiddleware,
-  createSlotValidation, // Reuse slot payload schema
+  updateSlotValidation,
   validationMiddleware,
   updateSlot
 );

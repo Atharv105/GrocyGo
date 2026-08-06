@@ -9,6 +9,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaTachometerAlt,
+  FaPercentage,
 } from "react-icons/fa";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
@@ -33,6 +34,11 @@ function Sidebar({ isOpen, setIsOpen }) {
       title: "Products",
       icon: <FaShoppingBasket />,
       path: "/admin/products",
+    },
+    {
+      title: "Offers",
+      icon: <FaPercentage />,
+      path: "/admin/offers",
     },
     {
       title: "Orders",

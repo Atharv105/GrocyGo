@@ -58,7 +58,31 @@ const generateSlotsValidation = [
     .withMessage("Max capacity must be at least 1"),
 ];
 
+const updateSlotValidation = [
+  body("date")
+    .optional()
+    .matches(dateRegex)
+    .withMessage("Date must be in YYYY-MM-DD format"),
+  body("startTime")
+    .optional()
+    .matches(timeRegex)
+    .withMessage("Start time must be in HH:MM or HH:MM:SS format"),
+  body("endTime")
+    .optional()
+    .matches(timeRegex)
+    .withMessage("End time must be in HH:MM or HH:MM:SS format"),
+  body("maxCapacity")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Max capacity must be at least 1"),
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean"),
+];
+
 module.exports = {
   createSlotValidation,
   generateSlotsValidation,
+  updateSlotValidation,
 };

@@ -32,6 +32,10 @@ export const updateOrderStatus = (orderId, status) =>
 export const updateOrderPaymentStatus = (orderId, paymentStatus) =>
   API.patch(`/orders/admin/orders/${orderId}/payment-status`, { paymentStatus }).then((r) => r.data);
 
+/** Admin: Update order payment method */
+export const updateOrderPaymentMethod = (orderId, paymentMethod) =>
+  API.patch(`/orders/admin/orders/${orderId}/payment-method`, { paymentMethod }).then((r) => r.data);
+
 /** Admin: Update order items and quantities */
 export const updateOrderAdmin = (orderId, items) =>
   API.put(`/orders/admin/orders/${orderId}`, { items }).then((r) => r.data);

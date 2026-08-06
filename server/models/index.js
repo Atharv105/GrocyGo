@@ -16,6 +16,9 @@ db.Slot = require("./Slot");
 db.RefreshToken = require("./RefreshToken");
 db.Otp = require("./Otp");
 db.ProductKeyword = require("./ProductKeyword");
+db.Offer = require("./Offer");
+db.OfferProduct = require("./OfferProduct");
+db.OfferCategory = require("./OfferCategory");
 
 // Relationships
 db.Category.hasMany(db.Product, {
@@ -119,6 +122,30 @@ db.Product.hasMany(db.ProductKeyword, {
 
 db.ProductKeyword.belongsTo(db.Product, {
   foreignKey: "productId",
+});
+
+// Product <-> Offer (Many-to-Many)
+db.Product.belongsToMany(db.Offer, {
+  through: db.OfferProduct,
+  foreignKey: "productId",
+  otherKey: "offerId",
+});
+db.Offer.belongsToMany(db.Product, {
+  through: db.OfferProduct,
+  foreignKey: "offerId",
+  otherKey: "productId",
+});
+
+// Category <-> Offer (Many-to-Many)
+db.Category.belongsToMany(db.Offer, {
+  through: db.OfferCategory,
+  foreignKey: "categoryId",
+  otherKey: "offerId",
+});
+db.Offer.belongsToMany(db.Category, {
+  through: db.OfferCategory,
+  foreignKey: "offerId",
+  otherKey: "categoryId",
 });
 
 module.exports = db;

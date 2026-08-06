@@ -37,7 +37,8 @@ const Order = sequelize.define(
 
     paymentMethod: {
       type: DataTypes.ENUM(
-        "CASH"
+        "CASH",
+        "ONLINE"
       ),
       allowNull: false,
       defaultValue: "CASH",
