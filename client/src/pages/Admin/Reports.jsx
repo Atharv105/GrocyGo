@@ -14,6 +14,35 @@ function AdminReports() {
   defaultStartDate.setDate(defaultStartDate.getDate() - 6);
   const [startDate, setStartDate] = useState(defaultStartDate.toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [datePreset, setDatePreset] = useState("LAST_7_DAYS");
+
+  const handleDatePresetChange = (preset) => {
+    setDatePreset(preset);
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
+
+    if (preset === "TODAY") {
+      // already today
+    } else if (preset === "YESTERDAY") {
+      start.setDate(today.getDate() - 1);
+      end.setDate(today.getDate() - 1);
+    } else if (preset === "LAST_7_DAYS") {
+      start.setDate(today.getDate() - 6);
+    } else if (preset === "LAST_30_DAYS") {
+      start.setDate(today.getDate() - 29);
+    } else if (preset === "THIS_MONTH") {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+    } else if (preset === "LAST_MONTH") {
+      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      end = new Date(today.getFullYear(), today.getMonth(), 0);
+    }
+
+    if (preset !== "CUSTOM") {
+      setStartDate(start.toISOString().split("T")[0]);
+      setEndDate(end.toISOString().split("T")[0]);
+    }
+  };
   
   const [loading, setLoading] = useState(true);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
@@ -226,19 +255,39 @@ function AdminReports() {
 
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
           {/* Date Range Filter */}
-          <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-gray-200 shadow-sm overflow-x-auto max-w-full">
+            <select
+              value={datePreset}
+              onChange={(e) => handleDatePresetChange(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+            >
+              <option value="TODAY">Today</option>
+              <option value="YESTERDAY">Yesterday</option>
+              <option value="LAST_7_DAYS">Last 7 Days</option>
+              <option value="LAST_30_DAYS">Last 30 Days</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="LAST_MONTH">Last Month</option>
+              <option value="CUSTOM">Custom Range</option>
+            </select>
+            <div className="w-px h-6 bg-gray-200 mx-1 shrink-0"></div>
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap pl-1">From:</span>
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setDatePreset("CUSTOM");
+              }}
               className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
             />
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap pl-1">To:</span>
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setDatePreset("CUSTOM");
+              }}
               className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
             />
           </div>
