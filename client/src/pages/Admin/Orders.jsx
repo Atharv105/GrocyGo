@@ -40,8 +40,10 @@ function AdminOrders() {
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("ALL");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("ALL");
   const [dateFilter, setDateFilter] = useState("ALL");
 
   // Detail Modal State
@@ -119,6 +121,7 @@ function AdminOrders() {
       customerName: billDetails.User?.name || "Customer",
       customerMobile: billDetails.User?.mobile || "N/A",
       pickupSlotText: slotText,
+      totalAmount: parseFloat(billDetails.totalAmount || 0),
       items: (billDetails.OrderItems || []).map(item => {
         const p = item.Product;
         const initialName = isMr ? (p?.name_mr || p?.name || "Product") : (p?.name_en || p?.name || "Product");
@@ -129,6 +132,7 @@ function AdminOrders() {
           name_mr: p?.name_mr || p?.name || "Product",
           unit: p?.unit || "",
           price: parseFloat(item.price || 0),
+          mrp: parseFloat(p?.price || item.price || 0),
           quantity: item.quantity,
           isCustom: false,
         };
@@ -315,6 +319,34 @@ function AdminOrders() {
     }
   };
 
+  // Handle Payment Method Update
+  const handlePaymentMethodChange = async (orderId, newPaymentMethod) => {
+    try {
+      setStatusUpdateLoading(prev => ({ ...prev, [`meth-${orderId}`]: true }));
+      const res = await orderService.updateOrderPaymentMethod(orderId, newPaymentMethod);
+      if (res.success) {
+        const updatedOrder = res.data;
+        setOrders(prev => prev.map(o => o.id === orderId ? {
+          ...o,
+          paymentMethod: updatedOrder?.paymentMethod || newPaymentMethod
+        } : o));
+        if (selectedOrderId === orderId) {
+          setOrderDetails(prev => prev ? {
+            ...prev,
+            paymentMethod: updatedOrder?.paymentMethod || newPaymentMethod
+          } : null);
+        }
+      } else {
+        alert(res.message || "Failed to update payment method");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || err.message || "Failed to update payment method");
+    } finally {
+      setStatusUpdateLoading(prev => ({ ...prev, [`meth-${orderId}`]: false }));
+    }
+  };
+
   const handlePrint = (billDetails, lang = "en") => {
     if (!billDetails) return;
     const printWindow = window.open("", "_blank", "width=800,height=900");
@@ -333,11 +365,13 @@ function AdminOrders() {
       pickupSlotText: billDetails.Slot
         ? `${new Date(billDetails.Slot.date).toLocaleDateString(isMr ? "mr-IN" : "en-IN", { day: "numeric", month: "short" })} • ${formatTime12h(billDetails.Slot.startTime)} - ${formatTime12h(billDetails.Slot.endTime)}`
         : "",
+      totalAmount: parseFloat(billDetails.totalAmount || 0),
       items: (billDetails.OrderItems || []).map(item => ({
         id: item.id,
         name: item.Product?.name || "Product",
         unit: item.Product?.unit || "",
         price: parseFloat(item.price || 0),
+        mrp: parseFloat(item.Product?.price || item.price || 0),
         quantity: item.quantity,
       })),
       thankYouMsg: "",
@@ -350,7 +384,8 @@ function AdminOrders() {
       customerDetails: "ग्राहक तपशील", name: "नाव", mobile: "मोबाईल",
       pickupSlot: "पिकअप वेळ", item: "उत्पादन", price: "किंमत",
       qty: "प्रमाण", total: "एकूण", totalItems: "एकूण वस्तू",
-      subtotal: "उप-एकूण", grandTotal: "महाएकूण",
+      subtotal: "उप-एकूण (M.R.P.)", offerSavings: "ऑफर बचत", grandTotal: "महाएकूण",
+      youSavedBanner: "🎉 या ऑर्डरवर तुमची ₹SAVINGS ची बचत झाली!",
       thankYou: data.thankYouMsg || "GrocyGo सोबत खरेदी केल्याबद्दल आभारी आहोत!",
       bringCopy: data.bringCopyMsg || "पिकअप पडताळणीसाठी ही प्रत आणा.",
       tagline: billMeta.tagline || "प्रीमियम ऑनलाइन किराणा दुकान",
@@ -360,7 +395,8 @@ function AdminOrders() {
       customerDetails: "Customer Details", name: "Name", mobile: "Mobile",
       pickupSlot: "Pickup Slot", item: "Item", price: "Price",
       qty: "Qty", total: "Total", totalItems: "Total Items",
-      subtotal: "Subtotal", grandTotal: "Grand Total",
+      subtotal: "Subtotal (M.R.P.)", offerSavings: "Offer Savings", grandTotal: "Grand Total",
+      youSavedBanner: "🎉 You saved ₹SAVINGS on this order!",
       thankYou: data.thankYouMsg || "Thank you for shopping with GrocyGo!",
       bringCopy: data.bringCopyMsg || "Please bring this copy for slot verification during pickup.",
       tagline: billMeta.tagline || "Premium Online Grocery Store",
@@ -370,7 +406,10 @@ function AdminOrders() {
       <tr style="font-size: 12px; border-bottom: 1px solid #f3f4f6;">
         <td style="padding: 10px 0; color: #9ca3af; text-align: left;">${idx + 1}</td>
         <td style="padding: 10px 0; font-family: sans-serif; font-weight: 500; color: #111827; text-align: left;">
-          <div>${item.name || "Product"}</div>
+          <div>
+            <span>${item.name || "Product"}</span>
+            ${item.mrp && item.mrp > item.price ? `<span style="font-size:10px;color:#6b7280;margin-left:4px;">(MRP: &#8377;${item.mrp.toFixed(2)})</span>` : ""}
+          </div>
           <div style="font-size: 10px; color: #9ca3af; font-family: monospace; margin-top: 2px;">${item.unit || ""}</div>
         </td>
         <td style="padding: 10px 0; text-align: right; color: #4b5563;">&#8377;${parseFloat(item.price || 0).toFixed(2)}</td>
@@ -380,7 +419,9 @@ function AdminOrders() {
     `).join("");
 
     const totalItems = (data.items || []).reduce((s, i) => s + i.quantity, 0);
-    const calculatedSubtotal = (data.items || []).reduce((s, i) => s + (parseFloat(i.price || 0) * i.quantity), 0);
+    const mrpSubtotal = (data.items || []).reduce((s, i) => s + ((i.mrp || i.price) * i.quantity), 0);
+    const actualGrandTotal = data.totalAmount && data.totalAmount > 0 ? data.totalAmount : (data.items || []).reduce((s, i) => s + (i.price * i.quantity), 0);
+    const offerSavings = Math.max(0, mrpSubtotal - actualGrandTotal);
     const footerHtml = billMeta.footerNote
       ? `<div style="padding-top:12px;border-top:1px dashed #d1d5db;font-size:10px;color:#374151;font-family:sans-serif;white-space:pre-wrap;">${billMeta.footerNote}</div>` : "";
 
@@ -431,11 +472,17 @@ function AdminOrders() {
           </div>
           <div style="padding-top:16px;border-top:1px dashed #d1d5db;">
             <div class="flex justify-between text-xs" style="color:#6b7280;"><span>${L.totalItems}:</span><span style="font-weight:bold;color:#111827;">${totalItems}</span></div>
-            <div class="flex justify-between text-xs" style="color:#6b7280;margin-top:4px;"><span>${L.subtotal}:</span><span style="color:#111827;">&#8377;${calculatedSubtotal.toFixed(2)}</span></div>
+            <div class="flex justify-between text-xs" style="color:#6b7280;margin-top:4px;"><span>${L.subtotal}:</span><span style="color:#111827;">&#8377;${mrpSubtotal.toFixed(2)}</span></div>
+            ${offerSavings > 0 ? `<div class="flex justify-between text-xs font-bold" style="color:#16a34a;margin-top:4px;"><span>${L.offerSavings}:</span><span>-&#8377;${offerSavings.toFixed(2)}</span></div>` : ""}
             <div class="flex justify-between text-base font-extrabold" style="margin-top:8px;border-top:3px double #d1d5db;border-bottom:3px double #d1d5db;padding:8px 0;color:#111827;">
               <span>${L.grandTotal}:</span>
-              <span style="color:#15803d;">&#8377;${calculatedSubtotal.toFixed(2)}</span>
+              <span style="color:#15803d;">&#8377;${actualGrandTotal.toFixed(2)}</span>
             </div>
+            ${offerSavings > 0 ? `
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px;margin-top:10px;text-align:center;color:#15803d;font-weight:bold;font-size:12px;font-family:sans-serif;">
+              ${L.youSavedBanner.replace("SAVINGS", offerSavings.toFixed(2))}
+            </div>
+            ` : ""}
           </div>
           ${footerHtml}
           <div style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px dashed #d1d5db;color:#9ca3af;font-size:10px;font-family:sans-serif;">
@@ -570,17 +617,18 @@ function AdminOrders() {
 
   // Statistics Calculations
   // Filter by selected date (order creation date)
-  const dateFilteredOrders = selectedDate
-    ? orders.filter(order => {
-        if (!order.createdAt) return false;
-        const createdDate = new Date(order.createdAt);
-        const year = createdDate.getFullYear();
-        const month = String(createdDate.getMonth() + 1).padStart(2, "0");
-        const day = String(createdDate.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
-        return dateStr === selectedDate;
-      })
-    : orders;
+  const dateFilteredOrders = orders.filter(order => {
+    if (!order.createdAt) return false;
+    const createdDate = new Date(order.createdAt).setHours(0,0,0,0);
+    let pass = true;
+    if (startDate) {
+      pass = pass && createdDate >= new Date(startDate).setHours(0,0,0,0);
+    }
+    if (endDate) {
+      pass = pass && createdDate <= new Date(endDate).setHours(23,59,59,999);
+    }
+    return pass;
+  });
 
   const stats = {
     total: dateFilteredOrders.length,
@@ -598,6 +646,7 @@ function AdminOrders() {
     const matchesTab = activeTab === "ALL" || order.status === activeTab;
 
     const matchesPayment = paymentFilter === "ALL" || order.paymentStatus === paymentFilter;
+    const matchesPaymentMethod = paymentMethodFilter === "ALL" || order.paymentMethod === paymentMethodFilter;
 
     let matchesDate = true;
     if (dateFilter !== "ALL") {
@@ -627,7 +676,7 @@ function AdminOrders() {
       (order.User?.mobile || "").includes(term) ||
       (order.User?.email || "").toLowerCase().includes(term);
 
-    return matchesTab && matchesPayment && matchesDate && matchesSearch;
+    return matchesTab && matchesPayment && matchesPaymentMethod && matchesDate && matchesSearch;
   });
 
   if (loading) {
@@ -810,21 +859,28 @@ function AdminOrders() {
               )}
             </div>
 
-            {/* Date Filter */}
+            {/* Date Range Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Pickup Date:</span>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">From:</span>
               <input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
               />
-              {selectedDate && (
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-500 transition cursor-pointer"
+              />
+              {(startDate || endDate) && (
                 <button
                   type="button"
-                  onClick={() => setSelectedDate("")}
+                  onClick={() => { setStartDate(""); setEndDate(""); }}
                   className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2.5 rounded-2xl font-bold transition flex items-center gap-1"
-                  title="Clear Date"
+                  title="Clear Dates"
                 >
                   Clear
                 </button>
@@ -850,7 +906,7 @@ function AdminOrders() {
         </div>
 
         {/* Dropdown Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Status</label>
             <select
@@ -858,10 +914,23 @@ function AdminOrders() {
               onChange={(e) => setPaymentFilter(e.target.value)}
               className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500 transition text-gray-700 cursor-pointer animate-none"
             >
-              <option value="ALL">All Payments</option>
+              <option value="ALL">All Status</option>
               <option value="PAID">Paid</option>
               <option value="PENDING">Pending</option>
               <option value="FAILED">Failed</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Method</label>
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) => setPaymentMethodFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:border-green-500 transition text-gray-700 cursor-pointer animate-none"
+            >
+              <option value="ALL">All Methods</option>
+              <option value="ONLINE">Online</option>
+              <option value="CASH">Cash</option>
             </select>
           </div>
 
@@ -880,9 +949,8 @@ function AdminOrders() {
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="overflow-x-auto rounded-2xl border border-gray-100">
-          <table className="w-full text-sm text-left text-gray-500">
+        <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+          <table className="w-full text-sm text-left text-gray-500 min-w-[900px]">
             <thead className="text-xs uppercase bg-gray-50 text-gray-700 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4">Order ID</th>
@@ -890,6 +958,7 @@ function AdminOrders() {
                 <th scope="col" className="px-6 py-4">Customer</th>
                 <th scope="col" className="px-6 py-4">Amount</th>
                 <th scope="col" className="px-6 py-4 text-center">Order Status</th>
+                <th scope="col" className="px-6 py-4 text-center">Payment Method</th>
                 <th scope="col" className="px-6 py-4 text-center">Payment Status</th>
                 <th scope="col" className="px-6 py-4 text-center">Actions</th>
               </tr>
@@ -897,7 +966,7 @@ function AdminOrders() {
             <tbody>
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-12 text-gray-400 font-medium">
+                  <td colSpan="8" className="text-center py-12 text-gray-400 font-medium">
                     No matching orders found.
                   </td>
                 </tr>
@@ -942,7 +1011,7 @@ function AdminOrders() {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        disabled={statusUpdateLoading[order.id] || order.status === "CANCELLED"}
+                        disabled={statusUpdateLoading[order.id] || order.status === "CANCELLED" || order.status === "COMPLETED"}
                         className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${getStatusSelectStyle(
                           order.status
                         )}`}
@@ -957,9 +1026,20 @@ function AdminOrders() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <select
+                        value={order.paymentMethod || "CASH"}
+                        onChange={(e) => handlePaymentMethodChange(order.id, e.target.value)}
+                        disabled={statusUpdateLoading[`meth-${order.id}`] || order.status === "COMPLETED" || order.status === "CANCELLED"}
+                        className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${order.paymentMethod === 'ONLINE' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+                      >
+                        <option value="CASH">CASH</option>
+                        <option value="ONLINE">ONLINE</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <select
                         value={order.paymentStatus}
                         onChange={(e) => handlePaymentStatusChange(order.id, e.target.value)}
-                        disabled={statusUpdateLoading[`pay-${order.id}`]}
+                        disabled={statusUpdateLoading[`pay-${order.id}`] || order.status === "COMPLETED" || order.status === "CANCELLED"}
                         className={`text-xs font-bold rounded-full px-3 py-1.5 border outline-none cursor-pointer focus:ring-2 focus:ring-offset-1 transition ${getPaymentSelectStyle(
                           order.paymentStatus
                         )}`}
@@ -1327,7 +1407,7 @@ function AdminOrders() {
                           <select
                             value={orderDetails.status}
                             onChange={(e) => handleStatusChange(orderDetails.id, e.target.value)}
-                            disabled={statusUpdateLoading[orderDetails.id] || orderDetails.status === "CANCELLED"}
+                            disabled={statusUpdateLoading[orderDetails.id] || orderDetails.status === "CANCELLED" || orderDetails.status === "COMPLETED"}
                             className={`w-full text-sm font-bold rounded-xl p-2.5 border outline-none cursor-pointer focus:ring-2 transition ${getStatusSelectStyle(
                               orderDetails.status
                             )}`}
@@ -1346,6 +1426,7 @@ function AdminOrders() {
                           <select
                             value={orderDetails.paymentStatus}
                             onChange={(e) => handlePaymentStatusChange(orderDetails.id, e.target.value)}
+                            disabled={statusUpdateLoading[`pay-${orderDetails.id}`] || orderDetails.status === "COMPLETED" || orderDetails.status === "CANCELLED"}
                             className={`w-full text-sm font-bold rounded-xl p-2.5 border outline-none cursor-pointer focus:ring-2 transition ${getPaymentSelectStyle(
                               orderDetails.paymentStatus
                             )}`}
@@ -1392,7 +1473,8 @@ function AdminOrders() {
           customerDetails: "ग्राहक तपशील", name: "नाव", mobile: "मोबाईल",
           pickupSlot: "पिकअप वेळ", item: "उत्पादन", price: "किंमत",
           qty: "प्रमाण", total: "एकूण", totalItems: "एकूण वस्तू",
-          subtotal: "उप-एकूण", grandTotal: "महाएकूण",
+          subtotal: "उप-एकूण (M.R.P.)", offerSavings: "ऑफर बचत", grandTotal: "महाएकूण",
+          youSavedBanner: "🎉 या ऑर्डरवर तुमची ₹SAVINGS ची बचत झाली!",
           thankYou: "GrocyGo सोबत खरेदी केल्याबद्दल आभारी आहोत!",
           bringCopy: "पिकअप पडताळणीसाठी ही प्रत आणा.",
           tagline: billMeta.tagline || "प्रीमियम ऑनलाइन किराणा दुकान",
@@ -1403,7 +1485,8 @@ function AdminOrders() {
           customerDetails: "Customer Details", name: "Name", mobile: "Mobile",
           pickupSlot: "Pickup Slot", item: "Item", price: "Price",
           qty: "Qty", total: "Total", totalItems: "Total Items",
-          subtotal: "Subtotal", grandTotal: "Grand Total",
+          subtotal: "Subtotal (M.R.P.)", offerSavings: "Offer Savings", grandTotal: "Grand Total",
+          youSavedBanner: "🎉 You saved ₹SAVINGS on this order!",
           thankYou: "Thank you for shopping with GrocyGo!",
           bringCopy: "Please bring this copy for slot verification during pickup.",
           tagline: billMeta.tagline || "Premium Online Grocery Store",
@@ -1508,21 +1591,26 @@ function AdminOrders() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500 font-sans">{L.paymentMethod}:</span>
-                        <input
-                          type="text"
+                        <select
                           value={billEditData.paymentMethod}
                           onChange={e => updBill("paymentMethod", e.target.value)}
-                          className="text-right font-bold bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none transition w-1/2"
-                        />
+                          className="text-right font-bold bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none transition w-1/2 cursor-pointer appearance-none"
+                        >
+                          <option value="CASH">CASH</option>
+                          <option value="ONLINE">ONLINE</option>
+                        </select>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500 font-sans">{L.paymentStatus}:</span>
-                        <input
-                          type="text"
+                        <select
                           value={billEditData.paymentStatus}
                           onChange={e => updBill("paymentStatus", e.target.value)}
-                          className="text-right font-bold bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none transition w-1/2"
-                        />
+                          className="text-right font-bold bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none transition w-1/2 cursor-pointer appearance-none"
+                        >
+                          <option value="PAID">PAID</option>
+                          <option value="PENDING">PENDING</option>
+                          <option value="FAILED">FAILED</option>
+                        </select>
                       </div>
                     </div>
                     {/* Customer */}
@@ -1573,12 +1661,19 @@ function AdminOrders() {
                             <tr key={item.id} className="text-xs">
                               <td className="py-2.5 text-gray-400 align-top pt-3">{idx + 1}</td>
                               <td className="py-2 pr-2 font-sans font-medium text-gray-900">
-                                <input
-                                  type="text"
-                                  value={item.name}
-                                  onChange={e => updBillItem(idx, "name", e.target.value)}
-                                  className="w-full bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none font-semibold text-gray-900 transition"
-                                />
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="text"
+                                    value={item.name}
+                                    onChange={e => updBillItem(idx, "name", e.target.value)}
+                                    className="bg-transparent border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none font-semibold text-gray-900 transition w-auto min-w-[60px]"
+                                  />
+                                  {item.mrp && parseFloat(item.mrp) > parseFloat(item.price || 0) && (
+                                    <span className="text-[10px] text-gray-500 font-normal shrink-0">
+                                      (MRP: ₹{parseFloat(item.mrp).toFixed(2)})
+                                    </span>
+                                  )}
+                                </div>
                                 <input
                                   type="text"
                                   placeholder="Unit"
@@ -1588,14 +1683,14 @@ function AdminOrders() {
                                 />
                               </td>
                               <td className="py-2 text-right font-mono text-gray-600 align-top pt-2.5">
-                                <div className="flex items-center justify-end">
+                                <div className="inline-flex items-center justify-end">
                                   <span>₹</span>
                                   <input
                                     type="number"
                                     step="0.01"
                                     value={item.price}
                                     onChange={e => updBillItem(idx, "price", e.target.value)}
-                                    className="w-16 bg-transparent text-right border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-1 py-0.5 outline-none transition"
+                                    className="w-14 bg-transparent text-left border-b border-dashed border-transparent hover:border-amber-300 focus:border-amber-500 focus:bg-amber-50/50 px-0.5 py-0.5 outline-none transition"
                                   />
                                 </div>
                               </td>
@@ -1633,14 +1728,30 @@ function AdminOrders() {
                       </div>
                     </div>
                     {/* Summary */}
-                    <div className="pt-4 border-t border-dashed border-gray-300 space-y-2">
-                      <div className="flex justify-between font-sans text-gray-500"><span>{L.totalItems}:</span><span className="font-mono text-gray-800 font-semibold">{billEditData.items?.reduce((s, i) => s + i.quantity, 0) || 0}</span></div>
-                      <div className="flex justify-between font-sans text-gray-500"><span>{L.subtotal}:</span><span className="font-mono text-gray-800">₹{(billEditData.items?.reduce((s, i) => s + (parseFloat(i.price || 0) * i.quantity), 0) || 0).toFixed(2)}</span></div>
-                      <div className="flex justify-between font-sans text-base font-extrabold text-gray-950 pt-2 border-t border-double border-gray-300">
-                        <span>{L.grandTotal}:</span>
-                        <span className="font-mono text-green-700">₹{(billEditData.items?.reduce((s, i) => s + (parseFloat(i.price || 0) * i.quantity), 0) || 0).toFixed(2)}</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const totalItems = billEditData.items?.reduce((s, i) => s + (parseInt(i.quantity, 10) || 0), 0) || 0;
+                      const mrpSubtotal = billEditData.items?.reduce((s, i) => s + ((parseFloat(i.mrp || i.price || 0)) * (parseInt(i.quantity, 10) || 0)), 0) || 0;
+                      const actualGrandTotal = parseFloat(billEditData.totalAmount || 0) > 0 ? parseFloat(billEditData.totalAmount) : (billEditData.items?.reduce((s, i) => s + (parseFloat(i.price || 0) * (parseInt(i.quantity, 10) || 0)), 0) || 0);
+                      const offerSavings = Math.max(0, mrpSubtotal - actualGrandTotal);
+                      return (
+                        <div className="pt-4 border-t border-dashed border-gray-300 space-y-2 font-sans">
+                          <div className="flex justify-between text-gray-500"><span>{L.totalItems}:</span><span className="font-mono text-gray-800 font-semibold">{totalItems}</span></div>
+                          <div className="flex justify-between text-gray-500"><span>{L.subtotal}:</span><span className="font-mono text-gray-800">₹{mrpSubtotal.toFixed(2)}</span></div>
+                          {offerSavings > 0 && (
+                            <div className="flex justify-between font-bold text-green-600"><span>{L.offerSavings}:</span><span className="font-mono">-₹{offerSavings.toFixed(2)}</span></div>
+                          )}
+                          <div className="flex justify-between text-base font-extrabold text-gray-950 pt-2 border-t border-double border-gray-300">
+                            <span>{L.grandTotal}:</span>
+                            <span className="font-mono text-green-700">₹{actualGrandTotal.toFixed(2)}</span>
+                          </div>
+                          {offerSavings > 0 && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 mt-2 text-center text-green-800 font-bold text-xs">
+                              {L.youSavedBanner.replace("SAVINGS", offerSavings.toFixed(2))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {/* Custom Footer Note */}
                     {billMeta.footerNote && (
                       <div className="pt-4 border-t border-dashed border-gray-300 text-xs text-gray-700 font-sans whitespace-pre-wrap">{billMeta.footerNote}</div>

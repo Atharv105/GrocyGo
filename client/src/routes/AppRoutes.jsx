@@ -27,6 +27,7 @@ import CustomerSettings from "../pages/Dashboard/Settings";
 import AdminDashboard from "../pages/Admin/Dashboard";
 import Categories from "../pages/Admin/Categories";
 import AdminProducts from "../pages/Admin/Products";
+import AdminOffers from "../pages/Admin/Offers";
 import AdminOrders from "../pages/Admin/Orders";
 import AdminCustomers from "../pages/Admin/Customers";
 import AdminPickupSlots from "../pages/Admin/PickupSlots";
@@ -94,6 +95,7 @@ function AppRoutes() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/categories" element={<Categories />} />
             <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/offers" element={<AdminOffers />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/customers" element={<AdminCustomers />} />
             <Route path="/admin/slots" element={<AdminPickupSlots />} />

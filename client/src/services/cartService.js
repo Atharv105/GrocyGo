@@ -5,8 +5,8 @@ export const addToCart = (productId, quantity = 1) =>
   API.post("/cart", { productId, quantity }).then((r) => r.data);
 
 /** Get current user's cart */
-export const getMyCart = () =>
-  API.get("/cart").then((r) => r.data);
+export const getMyCart = (date = null) =>
+  API.get(date ? `/cart?date=${date}` : "/cart").then((r) => r.data);
 
 /** Update quantity of a cart item */
 export const updateCartQuantity = (productId, quantity) =>

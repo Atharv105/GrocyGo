@@ -475,7 +475,7 @@ function AdminPickupSlots() {
             ) : (
               <div className="overflow-x-auto">
                 <div className="max-h-[300px] overflow-y-auto pr-1">
-                  <table className="w-full text-left text-sm">
+                  <table className="w-full text-left text-sm min-w-[500px]">
                     <thead>
                       <tr className="border-b border-gray-100 text-gray-400 text-xs font-semibold uppercase tracking-wider">
                         <th className="pb-3 pl-2">Timing</th>

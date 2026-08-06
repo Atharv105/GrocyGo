@@ -13,6 +13,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const cloudinaryRoutes = require("./routes/cloudinaryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const slotRoutes = require("./routes/slotRoutes");
+const offerRoutes = require("./routes/offerRoutes");
 
 const errorMiddleware = require("./middleware/errorMiddleware");
 const localizationMiddleware = require("./middleware/localizationMiddleware");
@@ -76,6 +77,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/slots", slotRoutes);
+app.use("/api/offers", offerRoutes);
 
 // Global Error Handler (Always Last)
 app.use(errorMiddleware);

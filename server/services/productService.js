@@ -1,6 +1,7 @@
 const {Product , Category, ProductKeyword} = require("../models");
 const AppError = require("../utils/AppError");
 const {Op} = require("sequelize");
+const { getActiveOffers, getProductPriceDetails } = require("../utils/offerCalculator");
 
 const createProduct = async (productData) => {
     // Check if category exists
@@ -130,11 +131,20 @@ const getAllProducts = async (query) => {
     offset: Number(offset),
   });
 
+  const activeOffers = await getActiveOffers();
+  const processedProducts = rows.map((p) => {
+    const details = getProductPriceDetails(p, activeOffers);
+    return {
+      ...p.toJSON(),
+      ...details,
+    };
+  });
+
   return {
     totalProducts: count,
     currentPage: Number(page),
     totalPages: Math.ceil(count / limit),
-    products: rows,
+    products: processedProducts,
   };
 };
 
@@ -155,7 +165,12 @@ const getProductById = async(id) => {
     if(!product){
         throw new AppError("Product not Found",404);
     }
-    return product;
+    const activeOffers = await getActiveOffers();
+    const details = getProductPriceDetails(product, activeOffers);
+    return {
+      ...product.toJSON(),
+      ...details,
+    };
 };
 
 const updateProduct = async (id, productData) => {

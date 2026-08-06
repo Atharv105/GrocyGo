@@ -19,7 +19,8 @@ const addToCart = async (req, res, next) => {
 
 const getMyCart = async (req, res, next) => {
     try {
-        const cart = await cartService.getMyCart(req.user.id);
+        const { date } = req.query;
+        const cart = await cartService.getMyCart(req.user.id, date);
 
         res.status(200).json({
             success: true,

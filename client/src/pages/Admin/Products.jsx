@@ -259,14 +259,15 @@ function Products() {
           No products found. Add a product to get started.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-2xl shadow-md overflow-x-auto">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-green-600 text-white text-center">
               <tr>
                 <th className="p-4">Image</th>
                 <th>Name</th>
                 <th>Category</th>
-                <th>Price</th>
+                <th>Purchase Price</th>
+                <th>Selling Price</th>
                 <th>Stock</th>
                 <th>Unit</th>
                 <th>Status</th>
@@ -285,6 +286,7 @@ function Products() {
                   </td>
                   <td className="font-semibold text-gray-800">{product.name}</td>
                   <td className="text-gray-500">{product.Category?.name || "N/A"}</td>
+                  <td className="font-semibold text-gray-700">₹{product.purchasePrice || "0.00"}</td>
                   <td className="font-semibold text-green-700">₹{product.price}</td>
                   <td className={`font-semibold ${product.stock <= 5 ? "text-red-500 font-bold" : "text-gray-700"}`}>
                     {product.stock}
@@ -299,6 +301,7 @@ function Products() {
                           const res = await API.put(`/products/${product.id}`, {
                             name: product.name,
                             description: product.description,
+                            purchasePrice: product.purchasePrice,
                             price: product.price,
                             stock: product.stock,
                             unit: product.unit,

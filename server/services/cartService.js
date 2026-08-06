@@ -1,7 +1,31 @@
 const { where } = require("sequelize");
-const { Product, Cart, CartItem } = require("../models");
+const { Product, Cart, CartItem, Category } = require("../models");
 const AppError = require("../utils/AppError");
+const { calculateCartTotals, getActiveOffers, calculateProductOffer } = require("../utils/offerCalculator");
 
+const adjustQuantityForOffers = async (product, targetQty) => {
+    const activeOffers = await getActiveOffers();
+    const offer = calculateProductOffer(product, activeOffers);
+    
+    if (offer && offer.offerType === "BUY_X_GET_Y") {
+        const buyQty = Number(offer.buyQuantity || 1);
+        const freeQty = Number(offer.freeQuantity || 0);
+        
+        if (buyQty > 0 && freeQty > 0) {
+            const setSize = buyQty + freeQty;
+            const remainder = targetQty % setSize;
+            if (remainder >= buyQty) {
+                const proposedQty = targetQty - remainder + setSize;
+                if (proposedQty <= product.stock) {
+                    targetQty = proposedQty;
+                } else {
+                    targetQty = product.stock;
+                }
+            }
+        }
+    }
+    return targetQty;
+};
 
 const addToCart = async (userId, productId, quantity) => {
     //Check product exists
@@ -14,12 +38,6 @@ const addToCart = async (userId, productId, quantity) => {
 
     if (!product) {
         throw new AppError("Product not Found", 404);
-    }
-
-    //check stock
-
-    if (product.stock < quantity) {
-        throw new AppError("Insufficient stock", 400);
     }
 
     // Find or create user's cart
@@ -36,32 +54,37 @@ const addToCart = async (userId, productId, quantity) => {
         },
     });
 
+    let newQuantity = quantity;
     if (existingItem) {
-        const newQuantity = existingItem.quantity + quantity;
+        newQuantity = existingItem.quantity + quantity;
+    }
 
-        if (newQuantity > product.stock) {
-            throw new AppError(
-                `Only ${product.stock} item(s) available in stock`,
-                400
-            );
-        }
+    // Apply auto-adjustment
+    const adjustedQuantity = await adjustQuantityForOffers(product, newQuantity);
 
-        existingItem.quantity = newQuantity;
+    if (adjustedQuantity > product.stock) {
+        throw new AppError(
+            `Only ${product.stock} item(s) available in stock`,
+            400
+        );
+    }
+
+    if (existingItem) {
+        existingItem.quantity = adjustedQuantity;
         await existingItem.save();
-
         return existingItem;
     }
 
     const cartItem = await CartItem.create({
         cartId: cart.id,
         productId,
-        quantity,
+        quantity: adjustedQuantity,
     });
 
     return cartItem;
 };
 
-const getMyCart = async (userId) => {
+const getMyCart = async (userId, targetDateStr = null) => {
     const cart = await Cart.findOne({
         where: { userId },
         include: [
@@ -70,6 +93,12 @@ const getMyCart = async (userId) => {
                 include: [
                     {
                         model: Product,
+                        include: [
+                            {
+                                model: Category,
+                                attributes: ["id", "name_en", "name_mr"]
+                            }
+                        ],
                         attributes: [
                             "id",
                             "name_en",
@@ -79,6 +108,7 @@ const getMyCart = async (userId) => {
                             "unit",
                             "image",
                             "isActive",
+                            "categoryId"
                         ],
                     },
                 ],
@@ -91,40 +121,48 @@ const getMyCart = async (userId) => {
             cartId: null,
             totalItems: 0,
             grandTotal: 0,
+            subtotal: 0,
+            discount: 0,
+            savings: 0,
             items: [],
         };
     }
 
-    let grandTotal = 0;
-    let totalItems = 0;
+    const activeCartItems = cart.CartItems.filter((item) => item.Product && item.Product.isActive);
+    const totals = await calculateCartTotals(activeCartItems, targetDateStr);
 
-    const items = cart.CartItems
-        .filter((item) => item.Product && item.Product.isActive)
-        .map((item) => {
-            const subtotal = Number(item.Product.price) * item.quantity;
-            grandTotal += subtotal;
-            totalItems += item.quantity;
-
-            return {
-                id: item.id,
-                productId: item.Product.id,
-                name_en: item.Product.name_en,
-                name_mr: item.Product.name_mr,
-                name: item.Product.name_en, // default
-                image: item.Product.image,
-                unit: item.Product.unit,
-                price: item.Product.price,
-                stock: item.Product.stock,
-                quantity: item.quantity,
-                subtotal,
-            };
-        });
+    const mappedItems = totals.items.map((it) => {
+      const originalItem = activeCartItems.find((ci) => ci.id === it.cartItemId);
+      return {
+        id: it.cartItemId,
+        productId: it.productId,
+        name_en: it.name_en,
+        name_mr: it.name_mr,
+        name: it.name_en,
+        image: originalItem.Product.image,
+        unit: originalItem.Product.unit,
+        price: it.originalPrice,
+        finalPrice: it.finalPrice,
+        stock: originalItem.Product.stock,
+        quantity: it.quantity,
+        subtotal: it.itemSubtotal,
+        savings: it.savings,
+        totalPrice: it.totalPrice,
+        offerBadge: it.offerBadge,
+        appliedOffer: it.appliedOffer,
+        offerStartDate: it.offerStartDate,
+        offerEndDate: it.offerEndDate,
+      };
+    });
 
     return {
-        cartId: cart.id,
-        totalItems,
-        grandTotal,
-        items,
+      cartId: cart.id,
+      totalItems: mappedItems.reduce((acc, cur) => acc + cur.quantity, 0),
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      savings: totals.savings,
+      grandTotal: totals.grandTotal,
+      items: mappedItems,
     };
 };
 
@@ -161,14 +199,17 @@ const updateCartQuantity = async (userId, productId, quantity) => {
         throw new AppError("Product is no longer available", 400);
     }
 
-    if (quantity > cartItem.Product.stock) {
+    // Apply auto-adjustment
+    const adjustedQuantity = await adjustQuantityForOffers(cartItem.Product, quantity);
+
+    if (adjustedQuantity > cartItem.Product.stock) {
         throw new AppError(
             `Only ${cartItem.Product.stock} item(s) available in stock`,
             400
         );
     }
 
-    cartItem.quantity = quantity;
+    cartItem.quantity = adjustedQuantity;
 
     await cartItem.save();
 
