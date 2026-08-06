@@ -126,8 +126,9 @@ function AdminReports() {
       let orderProfit = 0;
       if (o.OrderItems && o.OrderItems.length > 0) {
         o.OrderItems.forEach(item => {
-          const itemProfit = (parseFloat(item.finalSellingPriceAtOrder || 0) - parseFloat(item.purchasePriceAtOrder || 0)) * item.quantity;
-          orderProfit += itemProfit;
+          const itemRevenue = parseFloat(item.subtotal || 0);
+          const itemCost = parseFloat(item.purchasePriceAtOrder || 0) * item.quantity;
+          orderProfit += (itemRevenue - itemCost);
         });
       }
       return sum + orderProfit;

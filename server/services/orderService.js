@@ -400,7 +400,7 @@ const getAllOrders = async (query = {}) => {
       },
       {
         model: OrderItem,
-        attributes: ["quantity", "purchasePriceAtOrder", "finalSellingPriceAtOrder"],
+        attributes: ["quantity", "purchasePriceAtOrder", "finalSellingPriceAtOrder", "subtotal"],
       }
     ],
     order: [["createdAt", "DESC"]],
@@ -638,7 +638,7 @@ const updateOrderPaymentMethod = async (orderId, paymentMethod) => {
   return order;
 };
 
-const updateOrder = async (orderId, items = []) => {
+const updateOrder = async (orderId, items = [], newSlotId = null) => {
   const transaction = await sequelize.transaction();
 
   try {
@@ -659,6 +659,46 @@ const updateOrder = async (orderId, items = []) => {
       throw new AppError("Order must have at least one item", 400);
     }
 
+    // Handle slot change
+    if (newSlotId && newSlotId !== order.slotId) {
+      const newSlot = await Slot.findByPk(newSlotId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      if (!newSlot || !newSlot.isActive) {
+        throw new AppError("Selected slot is unavailable", 400);
+      }
+
+      const now = dayjs();
+      const today = now.format("YYYY-MM-DD");
+      const currentTimeStr = now.format("HH:mm:ss");
+
+      if (
+        newSlot.date < today ||
+        (newSlot.date === today && newSlot.startTime < currentTimeStr)
+      ) {
+        throw new AppError("Selected slot has expired", 400);
+      }
+
+      if (newSlot.bookedCount >= newSlot.maxCapacity) {
+        throw new AppError("Selected slot is full", 400);
+      }
+
+      const oldSlot = await Slot.findByPk(order.slotId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+
+      if (oldSlot && oldSlot.bookedCount > 0) {
+        await oldSlot.decrement("bookedCount", { by: 1, transaction });
+      }
+
+      await newSlot.increment("bookedCount", { by: 1, transaction });
+      
+      order.slotId = newSlotId;
+    }
+
     // 1. Restore stock of all existing order items
     for (const oldItem of order.OrderItems) {
       await Product.increment("stock", {
@@ -677,11 +717,18 @@ const updateOrder = async (orderId, items = []) => {
     });
 
     const productMap = new Map(lockedProducts.map((p) => [Number(p.id), p]));
-    let totalAmount = 0;
     const validatedItems = [];
+    
+    // Construct mock cart items for offer calculation
+    const mockCartItems = items.map((item) => ({
+      id: `mock-${item.productId}`,
+      productId: Number(item.productId),
+      quantity: Number(item.quantity),
+      Product: productMap.get(Number(item.productId)),
+    }));
 
-    for (const item of items) {
-      const product = productMap.get(Number(item.productId));
+    for (const item of mockCartItems) {
+      const product = item.Product;
 
       if (!product || !product.isActive) {
         throw new AppError(`Product "${product?.name || "Unknown"}" is unavailable`, 400);
@@ -700,16 +747,35 @@ const updateOrder = async (orderId, items = []) => {
         where: { id: item.productId },
         transaction,
       });
+    }
 
-      const subtotal = Number(product.price) * item.quantity;
-      totalAmount += subtotal;
+    // Calculate dynamic totals to retain proper pricing and profit margins
+    const slot = await Slot.findByPk(order.slotId, { transaction });
+    const totals = await calculateCartTotals(mockCartItems, slot ? slot.date : null);
+    const totalAmount = totals.grandTotal;
+
+    for (const item of mockCartItems) {
+      const product = item.Product;
+      const computedItem = totals.items.find(it => it.productId === item.productId);
+
+      const itemPrice = computedItem ? computedItem.finalPrice : Number(product.price);
+      const itemSubtotal = computedItem ? computedItem.totalPrice : (Number(product.price) * item.quantity);
+
+      const purchasePriceAtOrder = Number(product.purchasePrice || 0);
+      const sellingPriceAtOrder = Number(product.price);
+      const finalSellingPriceAtOrder = itemPrice;
+      const discountAtOrder = sellingPriceAtOrder - finalSellingPriceAtOrder;
 
       validatedItems.push({
         orderId: order.id,
         productId: item.productId,
         quantity: item.quantity,
-        price: product.price,
-        subtotal: subtotal,
+        price: itemPrice,
+        subtotal: itemSubtotal,
+        purchasePriceAtOrder,
+        sellingPriceAtOrder,
+        discountAtOrder,
+        finalSellingPriceAtOrder
       });
     }
 

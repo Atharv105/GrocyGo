@@ -1,41 +1,36 @@
-const sequelize = require("./config/database");
+const { sequelize, OrderItem, Product } = require("./models");
 
-async function run() {
+async function fixProfits() {
+  const transaction = await sequelize.transaction();
   try {
-    await sequelize.authenticate();
-    console.log("Connected to database.");
+    const itemsToFix = await OrderItem.findAll({
+      where: {
+        purchasePriceAtOrder: 0.00,
+        finalSellingPriceAtOrder: 0.00
+      }
+    });
 
-    // Add purchasePrice to products
-    await sequelize.query(
-      "ALTER TABLE products ADD COLUMN purchasePrice DECIMAL(10,2) NOT NULL DEFAULT 0.00;"
-    );
-    console.log("Added purchasePrice to products.");
+    console.log(`Found ${itemsToFix.length} OrderItems with zeroed pricing fields.`);
 
-    // Add tracking columns to order_items
-    await sequelize.query(
-      "ALTER TABLE order_items ADD COLUMN purchasePriceAtOrder DECIMAL(10,2) NOT NULL DEFAULT 0.00;"
-    );
-    await sequelize.query(
-      "ALTER TABLE order_items ADD COLUMN sellingPriceAtOrder DECIMAL(10,2) NOT NULL DEFAULT 0.00;"
-    );
-    await sequelize.query(
-      "ALTER TABLE order_items ADD COLUMN discountAtOrder DECIMAL(10,2) NOT NULL DEFAULT 0.00;"
-    );
-    await sequelize.query(
-      "ALTER TABLE order_items ADD COLUMN finalSellingPriceAtOrder DECIMAL(10,2) NOT NULL DEFAULT 0.00;"
-    );
+    for (const item of itemsToFix) {
+      const product = await Product.findByPk(item.productId);
+      if (product) {
+        item.purchasePriceAtOrder = product.purchasePrice || 0;
+        item.sellingPriceAtOrder = product.price;
+        item.finalSellingPriceAtOrder = item.price;
+        item.discountAtOrder = Number(product.price) - Number(item.price);
+        await item.save({ transaction });
+      }
+    }
     
-    // Default the historical metrics using the existing 'price' column as the base
-    await sequelize.query(
-      "UPDATE order_items SET finalSellingPriceAtOrder = price, sellingPriceAtOrder = price;"
-    );
-    console.log("Added and initialized tracking columns to order_items.");
-
-  } catch (error) {
-    console.error("Error running migration:", error);
+    await transaction.commit();
+    console.log("Successfully fixed previous order items.");
+  } catch (err) {
+    await transaction.rollback();
+    console.error("Error fixing order items:", err);
   } finally {
     process.exit(0);
   }
 }
 
-run();
+fixProfits();

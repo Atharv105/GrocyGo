@@ -988,14 +988,12 @@ function AdminOrders() {
                             })}
                           </span>
                         </div>
-                        {order.Slot ? (
-                          <div className="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-1.5 mt-0.5 max-w-[180px]">
-                            <span className="font-semibold block text-gray-600 text-[10px] uppercase tracking-wider">Pickup Slot:</span>
-                            <span className="block text-[10px] text-gray-500">
-                              {formatTime12h(order.Slot.startTime)} - {formatTime12h(order.Slot.endTime)}
-                            </span>
-                          </div>
-                        ) : (
+                        {order.Slot && (
+                          <span className="text-xs text-blue-600 font-semibold mt-1 flex items-center gap-1">
+                            <Clock size={12} /> {new Date(order.Slot.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} | {formatTime12h(order.Slot.startTime)} - {formatTime12h(order.Slot.endTime)}
+                          </span>
+                        )}
+                        {!order.Slot && (
                           <span className="text-[10px] text-red-500 font-semibold italic">No Slot Selected</span>
                         )}
                       </div>

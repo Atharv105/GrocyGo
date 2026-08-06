@@ -37,10 +37,10 @@ export const updateOrderPaymentMethod = (orderId, paymentMethod) =>
   API.patch(`/orders/admin/orders/${orderId}/payment-method`, { paymentMethod }).then((r) => r.data);
 
 /** Admin: Update order items and quantities */
-export const updateOrderAdmin = (orderId, items) =>
-  API.put(`/orders/admin/orders/${orderId}`, { items }).then((r) => r.data);
+export const updateOrderAdmin = (orderId, items, slotId) =>
+  API.put(`/orders/admin/orders/${orderId}`, { items, slotId }).then((r) => r.data);
 
 /** Customer: Update order items and quantities */
-export const updateOrderCustomer = (orderId, items) =>
-  API.put(`/orders/${orderId}`, { items }).then((r) => r.data);
+export const updateOrderCustomer = (orderId, items, slotId) =>
+  API.put(`/orders/${orderId}`, { items, slotId }).then((r) => r.data);
 

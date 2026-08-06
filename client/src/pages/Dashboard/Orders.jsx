@@ -14,6 +14,7 @@ import {
   Ban
 } from "lucide-react";
 import * as orderService from "../../services/orderService";
+import * as slotService from "../../services/slotService";
 import API from "../../services/api";
 
 function Orders() {
@@ -54,6 +55,26 @@ function Orders() {
   const [showOrderSuggestions, setShowOrderSuggestions] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [activeAddProductIndex, setActiveAddProductIndex] = useState(-1);
+
+  // Edit Slot State
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  const fetchSlotsForDate = async (dateStr) => {
+    try {
+      setSlotsLoading(true);
+      const res = await slotService.getAvailableSlots(dateStr);
+      if (res.success) {
+        setAvailableSlots(res.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch slots:", err);
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -158,6 +179,12 @@ function Orders() {
     setIsEditingItems(true);
     setEditItemsError(null);
     loadProductsForEdit();
+
+    if (orderDetails.Slot) {
+      setSelectedDate(orderDetails.Slot.date);
+      setSelectedSlotId(orderDetails.slotId || orderDetails.Slot.id);
+      fetchSlotsForDate(orderDetails.Slot.date);
+    }
   };
 
   const handleEditQtyChange = (productId, newQty) => {
@@ -204,13 +231,13 @@ function Orders() {
         quantity: item.quantity,
       }));
 
-      const res = await orderService.updateOrderCustomer(orderDetails.id, payload);
+      const res = await orderService.updateOrderCustomer(orderDetails.id, payload, selectedSlotId);
       if (res.success) {
         setOrderDetails(res.data);
         setOrders((prev) =>
           prev.map((o) =>
             o.id === orderDetails.id
-              ? { ...o, totalAmount: res.data.totalAmount, OrderItems: res.data.OrderItems }
+              ? { ...o, totalAmount: res.data.totalAmount, OrderItems: res.data.OrderItems, Slot: res.data.Slot }
               : o
           )
         );
@@ -724,6 +751,51 @@ function Orders() {
                               )}
                             </div>
                           )}
+                        </div>
+
+                        {/* Edit Pickup Slot Section */}
+                        <div className="border border-dashed border-gray-200 rounded-2xl p-4 bg-gray-50/50 mb-4">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">{t("changePickupSlot", { defaultValue: "Change Pickup Slot (Optional)" })}</label>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <input
+                              type="date"
+                              value={selectedDate}
+                              min={new Date().toISOString().split("T")[0]}
+                              onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                setSelectedSlotId(null);
+                                fetchSlotsForDate(e.target.value);
+                              }}
+                              className="w-full sm:w-auto bg-white border border-gray-200 rounded-xl py-2 px-3 text-sm outline-none focus:border-green-500 transition"
+                            />
+                            <select
+                              value={selectedSlotId || ""}
+                              onChange={(e) => setSelectedSlotId(e.target.value)}
+                              disabled={slotsLoading || !selectedDate}
+                              className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3 text-sm outline-none focus:border-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <option value="" disabled>{t("selectSlot", { defaultValue: "Select a slot" })}</option>
+                              {slotsLoading ? (
+                                <option disabled>{t("loading", { defaultValue: "Loading..." })}</option>
+                              ) : availableSlots.length === 0 ? (
+                                <option disabled>{t("noSlotsAvailable", { defaultValue: "No slots available" })}</option>
+                              ) : (
+                                availableSlots.map(slot => {
+                                  const isFull = slot.bookedCount >= slot.maxCapacity;
+                                  const isCurrentSlot = slot.id === orderDetails.slotId || (orderDetails.Slot && slot.id === orderDetails.Slot.id);
+                                  return (
+                                    <option 
+                                      key={slot.id} 
+                                      value={slot.id} 
+                                      disabled={isFull && !isCurrentSlot}
+                                    >
+                                      {slot.startTime} - {slot.endTime} {isFull && !isCurrentSlot ? "(Full)" : isCurrentSlot ? "(Current)" : ""}
+                                    </option>
+                                  );
+                                })
+                              )}
+                            </select>
+                          </div>
                         </div>
 
                         {editItemsError && (
