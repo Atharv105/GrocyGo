@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaGift, FaFolder, FaShoppingBag, FaCalendarAlt, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaGift, FaFolder, FaShoppingBag, FaCalendarAlt, FaToggleOn, FaToggleOff, FaCloud, FaImage } from "react-icons/fa";
 import * as offerService from "../../services/offerService";
 import * as productService from "../../services/productService";
 import API from "../../services/api";
+import CloudinaryGalleryModal from "../../components/Admin/CloudinaryGalleryModal";
 
 function AdminOffers() {
   const [offers, setOffers] = useState([]);
@@ -14,6 +15,7 @@ function AdminOffers() {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [isAssignProdModalOpen, setIsAssignProdModalOpen] = useState(false);
   const [isAssignCatModalOpen, setIsAssignCatModalOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   // Selected for associations
   const [selectedOffer, setSelectedOffer] = useState(null);
@@ -548,16 +550,58 @@ function AdminOffers() {
                   />
                 </div>
 
-                <div>
-                  <label className="font-semibold text-sm text-gray-700">Banner Image URL</label>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="font-semibold text-sm text-gray-700">Offer Poster / Banner Image</label>
+                  {bannerImage && (
+                    <button
+                      type="button"
+                      onClick={() => setBannerImage("")}
+                      className="text-xs text-red-500 hover:underline font-semibold"
+                    >
+                      Clear Image
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={bannerImage}
                     onChange={(e) => setBannerImage(e.target.value)}
-                    placeholder="https://example.com/banner.jpg"
-                    className="w-full mt-1.5 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    placeholder="Paste Image URL or select poster from gallery..."
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-green-500 outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setIsGalleryOpen(true)}
+                    className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition text-sm shrink-0 shadow-sm"
+                  >
+                    <FaCloud className="text-green-600" /> Select / Upload Poster
+                  </button>
                 </div>
+
+                {bannerImage ? (
+                  <div className="mt-3 relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 group shadow-sm">
+                    <img
+                      src={bannerImage}
+                      alt="Offer Poster Preview"
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://placehold.co/600x200?text=Invalid+Image+URL";
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                      Poster Preview
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Upload or pick a landscape poster image for Amazon/Flipkart style display on user landing page.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -743,6 +787,17 @@ function AdminOffers() {
           </div>
         </div>
       )}
+
+      {/* Cloudinary Image Gallery Modal */}
+      <CloudinaryGalleryModal
+        isOpen={isGalleryOpen}
+        onClose={() => setIsGalleryOpen(false)}
+        onSelect={(url) => {
+          setBannerImage(url);
+          setIsGalleryOpen(false);
+        }}
+        initialTab="products"
+      />
     </div>
   );
 }

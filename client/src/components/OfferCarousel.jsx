@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaTag, FaArrowRight } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
 function OfferCarousel({ banners = [] }) {
   const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (banners.length <= 1 || isHovered) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
-    }, 3000); // 3 seconds auto-scroll
+    }, 4000); // 4 seconds auto-slide
     return () => clearInterval(interval);
-  }, [banners]);
+  }, [banners, isHovered]);
 
   if (!banners || banners.length === 0) {
     return null;
@@ -28,83 +29,127 @@ function OfferCarousel({ banners = [] }) {
   };
 
   return (
-    <div className="relative w-full max-w-7xl mx-auto px-4 md:px-6 py-6 overflow-hidden select-none group">
-      {/* Slider container */}
-      <div className="relative h-56 sm:h-80 md:h-96 lg:h-[480px] w-full rounded-3xl overflow-hidden shadow-md bg-gradient-to-r from-green-50 to-orange-50">
+    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-6 select-none">
+      {/* Main Banner Slider Frame (Amazon & Flipkart inspired proportions) */}
+      <div 
+        className="relative h-44 sm:h-60 md:h-72 lg:h-[320px] w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-lg border border-gray-100 bg-gradient-to-r from-green-950 via-green-900 to-emerald-950 group"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {banners.map((slide, idx) => {
           const isActive = idx === currentIndex;
+          
+          // Format discount badge text
+          let discountBadge = "";
+          if (slide.discountValue) {
+            discountBadge = slide.discountType === "PERCENTAGE" 
+              ? `${Math.round(slide.discountValue)}% OFF`
+              : `₹${Math.round(slide.discountValue)} OFF`;
+          } else if (slide.buyQuantity && slide.freeQuantity) {
+            `Buy ${slide.buyQuantity} Get ${slide.freeQuantity} Free`;
+          }
+
           return (
             <div
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-between ${
-                isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              key={slide.id || idx}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
               }`}
             >
-              {/* Background image / overlay */}
+              {/* Poster Image Sized According to Banner */}
               {slide.bannerImage ? (
-                <img
-                  src={slide.bannerImage}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  alt={slide.title}
-                />
+                <div className="absolute inset-0 w-full h-full overflow-hidden">
+                  <img
+                    src={slide.bannerImage}
+                    alt={slide.title}
+                    className="w-full h-full object-cover object-right md:object-center transform group-hover:scale-103 transition-transform duration-700 ease-out"
+                  />
+                  {/* Gradient Overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-transparent md:w-3/4" />
+                </div>
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-800" />
+                /* Fallback Graphic Banner if no poster uploaded */
+                <div className="absolute inset-0 bg-gradient-to-br from-green-700 via-emerald-800 to-teal-900 flex items-center justify-between p-8 md:p-12 overflow-hidden">
+                  <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="absolute right-1/3 -top-10 w-60 h-60 bg-yellow-400/10 rounded-full blur-xl pointer-events-none" />
+                </div>
               )}
 
-              {/* Glassmorphic content box */}
-              <div className="absolute left-6 sm:left-14 md:left-20 bottom-6 sm:bottom-12 max-w-sm sm:max-w-md bg-white/90 backdrop-blur-md p-4 sm:p-6 rounded-2xl border border-white/40 shadow-xl flex flex-col z-20">
-                <span className="bg-orange-500 text-white text-[10px] sm:text-xs font-extrabold uppercase px-2.5 py-1 rounded-full self-start shadow-sm tracking-wider">
-                  {t(slide.offerType, { defaultValue: slide.offerType.replace("_", " ") })}
-                </span>
-                <h2 className="text-lg sm:text-2xl lg:text-3xl font-black text-gray-900 mt-2 leading-tight">
+              {/* Offer Details Floating Content */}
+              <div className="absolute left-4 sm:left-8 md:left-12 top-1/2 -translate-y-1/2 max-w-[75%] sm:max-w-md md:max-w-lg z-20 flex flex-col items-start space-y-2 sm:space-y-3">
+                {/* Offer Type / Discount Tag */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="bg-amber-400 text-amber-950 text-[10px] sm:text-xs font-black uppercase px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 tracking-wider">
+                    <FaTag className="text-[10px]" />
+                    {discountBadge || t(slide.offerType, { defaultValue: slide.offerType?.replace("_", " ") || "SPECIAL OFFER" })}
+                  </span>
+                  {parseFloat(slide.minimumPurchase) > 0 && (
+                    <span className="bg-white/20 backdrop-blur-md text-white text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full border border-white/30">
+                      Min. ₹{slide.minimumPurchase}
+                    </span>
+                  )}
+                </div>
+
+                {/* Offer Title */}
+                <h2 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md line-clamp-2">
                   {slide.title}
                 </h2>
-                <p className="text-gray-600 text-xs sm:text-sm mt-1 sm:mt-2 line-clamp-2">
-                  {slide.description || t("carouselDefaultDesc", { defaultValue: "Grab exclusive discounts on your grocery cart items today!" })}
-                </p>
+
+                {/* Description */}
+                {slide.description && (
+                  <p className="text-gray-200 text-xs sm:text-sm line-clamp-2 drop-shadow hidden sm:block max-w-xl">
+                    {slide.description}
+                  </p>
+                )}
+
+                {/* CTA Shop Now Button */}
                 <Link
                   to="/products"
-                  className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:py-2.5 rounded-xl mt-4 self-start shadow-sm transition text-center"
+                  className="mt-3 sm:mt-5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs sm:text-sm font-extrabold px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl shadow-lg hover:shadow-green-500/30 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
                 >
-                  {t("shopOfferNow", { defaultValue: "Shop Offer Now" })}
+                  <span>{t("shopOfferNow", { defaultValue: "Shop Deals Now" })}</span>
+                  <FaArrowRight size={12} />
                 </Link>
               </div>
             </div>
           );
         })}
+
+        {/* Navigation Arrows (Amazon/Flipkart Style) */}
+        {banners.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              aria-label="Previous Offer"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 sm:p-3 rounded-full shadow-lg border border-gray-100 transition-all z-30 opacity-80 group-hover:opacity-100 hover:scale-110 active:scale-95"
+            >
+              <FaChevronLeft className="text-xs sm:text-sm" />
+            </button>
+
+            <button
+              onClick={nextSlide}
+              aria-label="Next Offer"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 sm:p-3 rounded-full shadow-lg border border-gray-100 transition-all z-30 opacity-80 group-hover:opacity-100 hover:scale-110 active:scale-95"
+            >
+              <FaChevronRight className="text-xs sm:text-sm" />
+            </button>
+
+            {/* Pagination Indicators */}
+            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 z-30 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20">
+              {banners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentIndex ? "bg-amber-400 w-6 sm:w-8" : "bg-white/50 hover:bg-white/80 w-2"
+                  }`}
+                  title={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Nav Arrows */}
-      {banners.length > 1 && (
-        <>
-          <button
-            onClick={prevSlide}
-            className="absolute left-6 md:left-10 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-lg flex items-center justify-center border transition z-20 opacity-0 group-hover:opacity-100"
-          >
-            <FaChevronLeft className="text-sm sm:text-base" />
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-6 md:right-10 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-lg flex items-center justify-center border transition z-20 opacity-0 group-hover:opacity-100"
-          >
-            <FaChevronRight className="text-sm sm:text-base" />
-          </button>
-
-          {/* Indicators Dots */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-            {banners.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  idx === currentIndex ? "bg-green-600 w-6" : "bg-gray-300"
-                }`}
-                title={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }

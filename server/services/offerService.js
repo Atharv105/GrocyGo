@@ -161,11 +161,11 @@ const getHomepageOffers = async () => {
 
   // Filter out by categories or types
   const heroBanners = processedOffers.filter(
-    (o) => o.offerType === "BANNER_ONLY" || (o.bannerImage && o.isActive)
+    (o) => o.isActive
   );
   
   const todayOffers = processedOffers.filter(
-    (o) => o.offerType === "PERCENTAGE_DISCOUNT" || o.offerType === "FIXED_DISCOUNT"
+    (o) => o.offerType === "PERCENTAGE_DISCOUNT" || o.offerType === "FIXED_DISCOUNT" || o.offerType === "BUY_X_GET_Y" || o.offerType === "BANNER_ONLY"
   );
   
   const festivalOffers = processedOffers.filter(
