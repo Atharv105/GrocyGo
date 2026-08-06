@@ -149,9 +149,9 @@ const updatePaymentMethod = async (req, res, next) => {
 const updateOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { items } = req.body;
+    const { items, slotId } = req.body;
 
-    const order = await orderService.updateOrder(id, items);
+    const order = await orderService.updateOrder(id, items, slotId);
 
     res.status(200).json({
       success: true,
@@ -166,7 +166,7 @@ const updateOrder = async (req, res, next) => {
 const updateMyOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { items } = req.body;
+    const { items, slotId } = req.body;
 
     const checkOrder = await orderService.getOrderById(req.user.id, id);
     if (!checkOrder) {
@@ -176,7 +176,7 @@ const updateMyOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Only pending orders can be updated" });
     }
 
-    const order = await orderService.updateOrder(id, items);
+    const order = await orderService.updateOrder(id, items, slotId);
 
     res.status(200).json({
       success: true,
